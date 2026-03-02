@@ -108,7 +108,7 @@ def _safe_name_part(s: str, default="user"):
 
 def normalize_screen_access(val: str) -> str:
     val = (val or "BOTH").strip().upper()
-    return val if val in ("PPM", "NTT", "BOTH", "EMAIL_NTT") else "BOTH"
+    return val if val in ("PPM", "BOTH", "EMAIL_NTT") else "BOTH"
 
 
 # -------------------------
@@ -191,7 +191,21 @@ def init_db():
     ensure_uploads_module_column()
     ensure_uploads_uploaded_by_column()
     ensure_timesheets_submit_columns()
+    ensure_timesheets_verification_column()
     ensure_users_screen_access_column()
+    ensure_timesheets_remaining_planned_column()
+
+def ensure_timesheets_remaining_planned_column():
+    """Add remaining_planned column to timesheets if missing."""
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("PRAGMA table_info(timesheets)")
+    cols = [r[1] for r in cur.fetchall()]
+    if "remaining_planned" not in cols:
+        logging.info("Adding 'remaining_planned' column to timesheets table...")
+        cur.execute("ALTER TABLE timesheets ADD COLUMN remaining_planned REAL NOT NULL DEFAULT 0.0")
+        conn.commit()
+    conn.close()
 
 
 def ensure_uploads_module_column():
@@ -236,6 +250,19 @@ def ensure_timesheets_submit_columns():
         cur.execute("ALTER TABLE timesheets ADD COLUMN submitted_at TEXT")
 
     conn.commit()
+    conn.close()
+
+
+def ensure_timesheets_verification_column():
+    """Add verification_filename column to timesheets if missing."""
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("PRAGMA table_info(timesheets)")
+    cols = [r[1] for r in cur.fetchall()]
+    if "verification_filename" not in cols:
+        logging.info("Adding 'verification_filename' column to timesheets table...")
+        cur.execute("ALTER TABLE timesheets ADD COLUMN verification_filename TEXT")
+        conn.commit()
     conn.close()
 
 
@@ -490,7 +517,7 @@ def _parse_week_start_from_ppm_text(text: str):
     except Exception:
         return None
 
-def _to_hour_value(token: str):
+def _to_hour_value(token: str, max_val=24):
     if token is None:
         return None
     s = token.strip().lower()
@@ -503,7 +530,7 @@ def _to_hour_value(token: str):
         v = float(s)
         if v < 0:
             v = 0.0
-        if v > 24:
+        if v > max_val:
             return None
         v = round(v * 4) / 4.0
         return v
@@ -573,6 +600,22 @@ def extract_ppm_hours_from_screenshot_total_row(image_path: str):
         else:
             candidates.sort(key=lambda t: t[0])
             result[dk] = float(candidates[0][1])
+            
+    # Also extract Remaining Planned broadly from the image
+    result['remaining_planned'] = 0.0
+    rem_words = [w for w in words if "remaining" in w['tl']]
+    if rem_words:
+        rem_cx = sum(w['cx'] for w in rem_words) / len(rem_words)
+        rem_cy = sum(w['cy'] for w in rem_words) / len(rem_words)
+        rem_cands = []
+        for w in words:
+            if w['cy'] > rem_cy + 10 and abs(w['cx'] - rem_cx) < 80:
+                v = _to_hour_value(w['t'], max_val=999)
+                if v is not None:
+                    rem_cands.append(v)
+        if rem_cands:
+            result['remaining_planned'] = float(rem_cands[-1])
+
     return result
 
 def extract_ntt_hours_from_screenshot(image_path: str):
@@ -627,29 +670,57 @@ def extract_ntt_hours_from_screenshot(image_path: str):
             'words': line_words
         })
     lines.sort(key=lambda x: x['cy'])
+    try:
+        import json
+        with open("ocr_debug.json", "w") as f:
+            json.dump(lines, f, indent=2)
+    except Exception:
+        pass
 
     entered_cxs = [w['cx'] for w in words if w['tl'] == 'entered']
     entered_cx = entered_cxs[0] if entered_cxs else None
 
-    # Make year optional to handle OCR truncating characters on right bounds
-    date_pattern = re.compile(r"(sunday|monday|tuesday|wednesday|thursday|friday|saturday)[,\s;:]+(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{1,2})")
-    
+    def guess_day(text):
+        if 'sun' in text: return 'sun'
+        if 'mon' in text: return 'mon'
+        if 'tue' in text: return 'tue'
+        if 'wed' in text or 'wco' in text: return 'wed'
+        if 'thu' in text: return 'thu'
+        if 'fri' in text: return 'fri'
+        if 'sat' in text: return 'sat'
+        return None
+
+    date_pattern = re.compile(r'(\d{1,2})[,\.\s]+(202\d)')
     date_nodes = []
     
     for line in lines:
         m = date_pattern.search(line['tl'])
         if m:
-            day_str = m.group(1)[:3]
-            if not date_nodes or date_nodes[-1]['day'] != day_str:
-                date_nodes.append({
-                    'day': day_str,
-                    'cy': line['cy'],
-                    'date_tuple': (m.group(2), int(m.group(3)))
-                })
+            d = guess_day(line['tl'])
+            date_nodes.append({
+                'day': d,
+                'cy': line['cy'],
+                'date_tuple': (int(m.group(1)), int(m.group(2)))
+            })
 
     result = {'sun': 0.0, 'mon': 0.0, 'tue': 0.0, 'wed': 0.0, 'thu': 0.0, 'fri': 0.0, 'sat': 0.0}
     if not date_nodes:
         return None
+
+    # Connect missing days sequentially
+    DAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
+    start_day = None
+    for dn in date_nodes:
+        if dn['day'] is not None:
+            start_day = dn['day']
+            break
+    
+    if start_day is None:
+        start_day = 'sun'
+        
+    start_idx = DAYS.index(start_day)
+    for i, dn in enumerate(date_nodes):
+        dn['day'] = DAYS[(start_idx + i) % 7]
 
     for i, dnode in enumerate(date_nodes):
         min_cy = dnode['cy']
@@ -658,36 +729,43 @@ def extract_ntt_hours_from_screenshot(image_path: str):
         cands = []
         for line in lines:
             if min_cy < line['cy'] < max_cy:
-                # Fiori puts 'Recorded / Target' data on the left. The first float is ALWAYS 'Recorded'
-                floats = re.findall(r'\b(\d+[\.,]\d{1,2})\b', line['tl'])
-                if floats:
-                    try:
-                        val = float(floats[0].replace(',', '.'))
-                        val = round(val * 4) / 4.0
-                        if val <= 24:
-                            cands.append(val)
-                    except Exception:
-                        pass
+                if entered_cx:
+                    for w in line.get('words', []):
+                        if abs(w['cx'] - entered_cx) < 90:
+                            clean_tl = w['tl'].replace(' ', '')
+                            m = re.search(r'^([0-9]{1,2})[^0-9]*([0-9]{2})', clean_tl)
+                            if m:
+                                val = float(m.group(1)) + float(m.group(2))/100.0
+                                if val <= 24:
+                                    cands.append(round(val * 4) / 4.0)
+                            else:
+                                # fallback for exact integer matching without .00, rare but possible
+                                m2 = re.search(r'^([0-9]{1,2})$', clean_tl)
+                                if m2 and float(m2.group(1)) <= 24:
+                                    cands.append(float(m2.group(1)))
         
         if cands:
             result[dnode['day']] = max(cands)
-
-    first_date = date_nodes[0]['date_tuple']
-    MONTHS_MAP = {
-        'january': 1, 'february': 2, 'march': 3, 'april': 4, 'may': 5, 'june': 6,
-        'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12
-    }
+    first_date_str = ""
+    for line in lines:
+        match = re.search(r'(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)', line['tl'])
+        if match:
+            first_date_str = match.group(1)
+            break
+            
+    months_keys = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+    month_int = 1
+    if first_date_str in months_keys:
+        month_int = months_keys.index(first_date_str) + 1
+        
     try:
-        month_int = MONTHS_MAP[first_date[0]]
-        # Safely fallback to current year if Fiori omits it in OCR
         import datetime
-        current_year = datetime.date.today().year
-        dt = datetime.date(current_year, month_int, first_date[1])
+        dt = datetime.date(year=int(date_nodes[0]['date_tuple'][1]), month=month_int, day=int(date_nodes[0]['date_tuple'][0]))
         days_to_sub = (dt.weekday() + 1) % 7
         ws = dt - datetime.timedelta(days=days_to_sub)
-        result['week_start'] = ws.isoformat()
+        result['week_start'] = ws.strftime('%d-%m-%Y')
     except Exception:
-        result['week_start'] = None
+        pass
         
     return result
 
@@ -811,7 +889,7 @@ def get_timesheet_by_upload(upload_id: int):
     cur = conn.cursor()
     cur.execute("""
         SELECT week_start, mon, tue, wed, thu, fri, sat, sun, total, updated_at,
-               COALESCE(submitted,0), COALESCE(submitted_at,'')
+               COALESCE(submitted,0), COALESCE(submitted_at,''), COALESCE(remaining_planned, 0.0)
         FROM timesheets WHERE upload_id = ?
     """, (upload_id,))
     row = cur.fetchone()
@@ -826,6 +904,7 @@ def get_timesheet_by_upload(upload_id: int):
         "updated_at": row[9],
         "submitted": int(row[10] or 0),
         "submitted_at": row[11] or "",
+        "remaining_planned": float(row[12] or 0.0)
     }
 
 
@@ -864,7 +943,24 @@ def mark_timesheet_submitted(upload_id: int):
     conn.close()
 
 
-def upsert_timesheet(upload_id: int, week_start: str, mon, tue, wed, thu, fri, sat, sun):
+def get_verification_filename(upload_id: int):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT verification_filename FROM timesheets WHERE upload_id = ?", (upload_id,))
+    row = cur.fetchone()
+    conn.close()
+    return row[0] if row and row[0] else None
+
+
+def save_verification_filename(upload_id: int, filename: str):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("UPDATE timesheets SET verification_filename = ? WHERE upload_id = ?", (filename, upload_id))
+    conn.commit()
+    conn.close()
+
+
+def upsert_timesheet(upload_id: int, week_start: str, mon, tue, wed, thu, fri, sat, sun, remaining_planned=0.0):
     if is_timesheet_submitted(upload_id):
         raise ValueError("Timesheet is submitted and locked. Contact Admin if changes are required.")
 
@@ -882,17 +978,18 @@ def upsert_timesheet(upload_id: int, week_start: str, mon, tue, wed, thu, fri, s
                SET week_start = ?,
                    mon = ?, tue = ?, wed = ?, thu = ?, fri = ?, sat = ?, sun = ?,
                    total = ?,
-                   updated_at = ?
+                   updated_at = ?,
+                   remaining_planned = ?
              WHERE upload_id = ?
-        """, (week_start, mon, tue, wed, thu, fri, sat, sun, total, updated_at, upload_id))
+        """, (week_start, mon, tue, wed, thu, fri, sat, sun, total, updated_at, remaining_planned, upload_id))
     else:
         cur.execute("""
             INSERT INTO timesheets (
                 upload_id, week_start, mon, tue, wed, thu, fri, sat, sun, total,
-                submitted, submitted_at, updated_at
+                submitted, submitted_at, updated_at, remaining_planned
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NULL, ?)
-        """, (upload_id, week_start, mon, tue, wed, thu, fri, sat, sun, total, updated_at))
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NULL, ?, ?)
+        """, (upload_id, week_start, mon, tue, wed, thu, fri, sat, sun, total, updated_at, remaining_planned))
 
     conn.commit()
     conn.close()
@@ -949,6 +1046,17 @@ def submit_week_group(upload_id: int, owner_email: str, week_start: str,
     group_ids = list_upload_ids_for_user_week(owner, week_start)
     if upload_id not in group_ids:
         group_ids.append(upload_id)
+
+    modules_in_this_week = {get_upload_module(u) for u in group_ids}
+    if "PPM" not in modules_in_this_week:
+        raise ValueError(
+            f"Cannot submit: No matching PPM report found for the week starting {week_start}. "
+            "Please upload a PPM screenshot for the exact same week before submitting NTT."
+        )
+    if "NTT" not in modules_in_this_week:
+        raise ValueError(
+            f"Cannot submit: No matching NTT report found for the week starting {week_start}."
+        )
 
     candidate = (sun, mon, tue, wed, thu, fri, sat)
 
@@ -1083,29 +1191,43 @@ def generate_monthly_export_xlsx(month_str: str) -> bytes:
     rows = cur.fetchall()
     conn.close()
 
-    week_starts = sorted({r[3] for r in rows if r and r[3] and _week_overlaps_month(r[3], first_day, last_day)})
+    import calendar
+    import string
+    
+    y, m = map(int, month_str.split('-'))
+    last_day_num = calendar.monthrange(y, m)[1]
+    
     buckets = []
-    for ws in week_starts:
-        if len(buckets) < 4:
-            buckets.append(ws)
-        else:
-            pass
+    for start_day in range(1, last_day_num + 1, 7):
+        end_day = min(start_day + 6, last_day_num)
+        start_date = datetime.date(y, m, start_day)
+        end_date = datetime.date(y, m, end_day)
+        buckets.append((start_date, end_date))
 
     def week_bucket(ws: str):
-        if ws in buckets:
-            return buckets.index(ws) + 1
-        if len(buckets) >= 4 and ws in week_starts and ws not in buckets:
-            return 4
+        try:
+            ws_date = datetime.date.fromisoformat(ws)
+            if ws_date.month == m:
+                target_day = ws_date.day
+            elif (ws_date + datetime.timedelta(days=6)).month == m:
+                target_day = (ws_date + datetime.timedelta(days=6)).day
+            else:
+                return None
+            for i, b in enumerate(buckets):
+                if b[0].day <= target_day <= b[1].day:
+                    return i + 1
+        except Exception:
+            pass
         return None
 
     data = {}
-    late = {}
     for email, rname, module, ws, total, sub_at in rows:
         if not ws or not _week_overlaps_month(ws, first_day, last_day):
             continue
         wk = week_bucket(ws)
         if wk is None:
-            continue
+            # Fallback for boundary weeks
+            wk = 1
         mod = (module or '').strip().upper()
         if mod not in ('PPM','NTT'):
             continue
@@ -1113,12 +1235,8 @@ def generate_monthly_export_xlsx(month_str: str) -> bytes:
         if not rkey:
             continue
         data.setdefault(rkey, {})
-        late.setdefault(rkey, {})
         data[rkey].setdefault(wk, {'PPM': 0.0, 'NTT': 0.0})
-        late[rkey].setdefault(wk, {'PPM': False, 'NTT': False})
         data[rkey][wk][mod] += float(total or 0.0)
-        if _is_late_submission(mod, ws, sub_at):
-            late[rkey][wk][mod] = True
 
     wb = Workbook()
     sh = wb.active
@@ -1126,19 +1244,34 @@ def generate_monthly_export_xlsx(month_str: str) -> bytes:
 
     sh.cell(row=1, column=1, value='Resource Name')
     sh.merge_cells(start_row=1, start_column=1, end_row=2, end_column=1)
-    week_cols = {1: 2, 2: 4, 3: 6, 4: 8}
-    for wk, c0 in week_cols.items():
-        sh.cell(row=1, column=c0, value=f'Week{wk}')
+    
+    num_weeks = len(buckets)
+    col = 2
+    week_cols = {}
+    for wk in range(1, num_weeks + 1):
+        week_cols[wk] = col
+        col += 2
+    total_col = col
+
+    def format_week_header(b) -> str:
+        return f"{b[0].strftime('%b %d')} - {b[1].strftime('%b %d')}"
+
+    for wk in range(1, num_weeks + 1):
+        c0 = week_cols[wk]
+        header_title = format_week_header(buckets[wk-1])
+        sh.cell(row=1, column=c0, value=header_title)
         sh.merge_cells(start_row=1, start_column=c0, end_row=1, end_column=c0+1)
         sh.cell(row=2, column=c0, value='PPM')
         sh.cell(row=2, column=c0+1, value='NTT')
+        
+    sh.cell(row=1, column=total_col, value='Total')
+    sh.merge_cells(start_row=1, start_column=total_col, end_row=2, end_column=total_col)
 
     thin = Side(style='thin', color='000000') if Side is not None else None
     border = Border(left=thin, right=thin, top=thin, bottom=thin) if Border is not None and thin is not None else None
-    red_fill = PatternFill('solid', fgColor='FFC7CE') if PatternFill is not None else None
 
     for r in (1, 2):
-        for c in range(1, 10):
+        for c in range(1, total_col + 1):
             cell = sh.cell(row=r, column=c)
             if Font is not None:
                 cell.font = Font(bold=True)
@@ -1153,20 +1286,20 @@ def generate_monthly_export_xlsx(month_str: str) -> bytes:
     r_out = 3
     for rname in sorted(data.keys(), key=lambda x: x.lower()):
         sh.cell(row=r_out, column=1, value=rname)
-        col = 2
-        for wk in range(1, 5):
+        
+        total_ntt = 0.0
+        for wk in range(1, num_weeks + 1):
+            c0 = week_cols[wk]
             ppm = data.get(rname, {}).get(wk, {}).get('PPM', 0.0)
             ntt = data.get(rname, {}).get(wk, {}).get('NTT', 0.0)
-            ppm_cell = sh.cell(row=r_out, column=col, value=round(ppm, 2))
-            ntt_cell = sh.cell(row=r_out, column=col+1, value=round(ntt, 2))
-            if red_fill is not None:
-                if late.get(rname, {}).get(wk, {}).get('PPM', False):
-                    ppm_cell.fill = red_fill
-                if late.get(rname, {}).get(wk, {}).get('NTT', False):
-                    ntt_cell.fill = red_fill
-            col += 2
+            total_ntt += ntt
+            
+            sh.cell(row=r_out, column=c0, value=round(ppm, 2))
+            sh.cell(row=r_out, column=c0+1, value=round(ntt, 2))
 
-        for c in range(1, 10):
+        sh.cell(row=r_out, column=total_col, value=round(total_ntt, 2))
+
+        for c in range(1, total_col + 1):
             cell = sh.cell(row=r_out, column=c)
             if Alignment is not None:
                 cell.alignment = Alignment(horizontal='left', vertical='center') if c == 1 else Alignment(horizontal='center', vertical='center')
@@ -1176,8 +1309,13 @@ def generate_monthly_export_xlsx(month_str: str) -> bytes:
 
     sh.freeze_panes = 'B3'
     sh.column_dimensions['A'].width = 22
-    for letter in ['B','C','D','E','F','G','H','I']:
-        sh.column_dimensions[letter].width = 12
+    letters = list(string.ascii_uppercase)
+    for i in range(26):
+        letters.append("A" + string.ascii_uppercase[i])
+        
+    for c in range(2, total_col):
+        sh.column_dimensions[letters[c-1]].width = 16
+    sh.column_dimensions[letters[total_col-1]].width = 12
 
     from io import BytesIO
     bio = BytesIO()
@@ -1656,11 +1794,8 @@ def build_timesheet_ui(upload_id: int, return_to: str, admin_delete_html: str = 
     is_submitted = int(ts.get("submitted", 0)) == 1
     disabled_attr = "disabled" if is_submitted else ""
 
-    # PPM & NTT: auto-extracted hours; prevent manual edits
-    ppm_locked = (module_for_upload in ("PPM", "NTT"))
-    if ppm_locked:
-        is_submitted = True
-        disabled_attr = "disabled"
+    if module_for_upload in ("PPM", "NTT"):
+        disabled_attr = "readonly style='pointer-events:none; background-color:#f4f5f7; color:#7d8597; border-color:#e6e9ee;'" if not is_submitted else "disabled"
 
     try:
         ws_date = datetime.date.fromisoformat(ts["week_start"])
@@ -1687,20 +1822,38 @@ def build_timesheet_ui(upload_id: int, return_to: str, admin_delete_html: str = 
     week_start_iso = html.escape(ws_date.isoformat())
 
     if not is_submitted:
-        controls_html = """
-        <div class="controls">
-          <button class="btn small" type="submit">
-            <i class="fa fa-save"></i> Save Hours
-          </button>
-
-          <button class="btn secondary small ts-submit-btn" type="submit" formaction="/timesheet/submit">
-            <i class="fa fa-check"></i> Submit (Lock)
-          </button>
-        </div>
-        <div class="muted" style="margin-top:6px">
-          <b>Submit-only rule:</b> At Submit, PPM and NTT hours must match for the same week (Sun–Sat). Submit locks the week.
-        </div>
-        """
+        if module_for_upload == "NTT":
+            controls_html = """
+            <div class="controls">
+              <button class="btn secondary small ts-submit-btn" type="submit" formaction="/timesheet/submit">
+                <i class="fa fa-check"></i> Submit
+              </button>
+            </div>
+            <div class="muted" style="margin-top:6px">
+              <b>Submit-only rule:</b> At Submit, PPM and NTT hours must match for the same week (Sun–Sat).
+            </div>
+            """
+        elif module_for_upload == "PPM":
+            controls_html = """
+            <div class="muted" style="margin-top:6px; color:#ef4444; font-weight: 500;">
+              <b>Action required:</b> Attach verification screenprint below and submit to lock this timesheet.
+            </div>
+            """
+        else:
+            controls_html = """
+            <div class="controls">
+              <button class="btn small" type="submit">
+                <i class="fa fa-save"></i> Save Hours
+              </button>
+    
+              <button class="btn secondary small ts-submit-btn" type="submit" formaction="/timesheet/submit">
+                <i class="fa fa-check"></i> Submit (Lock)
+              </button>
+            </div>
+            <div class="muted" style="margin-top:6px">
+              <b>Submit-only rule:</b> At Submit, PPM and NTT hours must match for the same week (Sun–Sat). Submit locks the week.
+            </div>
+            """
     else:
         controls_html = """
         <div class="muted" style="margin-top:8px">
@@ -1710,6 +1863,45 @@ def build_timesheet_ui(upload_id: int, return_to: str, admin_delete_html: str = 
 
     ts_head_right_extra = admin_delete_html or ""
 
+    v_file = get_verification_filename(upload_id)
+    v_html = ""
+    if module_for_upload == "PPM":
+        if v_file:
+            v_file_url = f"/{UPLOAD_DIR}/{v_file}"
+            v_html = f"""
+            <div style="margin-top:16px; padding:10px 12px; border-top:1px solid #e6e9ee; background:#fafafa;">
+              <h4 style="margin:0 0 8px 0;font-size:13px;color:#10b981;"><i class="fa fa-check-circle"></i> Verification Screenprint Attached</h4>
+              <a class='thumb-link' href='{html.escape(v_file_url, quote=True)}' data-url='{html.escape(v_file_url, quote=True)}' data-filename='{html.escape(v_file, quote=True)}' style='display:inline-block; max-width:140px; margin-top:4px;'>
+                 <img src='{html.escape(v_file_url, quote=True)}' alt='verification screenshot' style='max-width:100%; border-radius:8px; border:1px solid #e6e9ee;'>
+              </a>
+            </div>
+            """
+        else:
+            v_html = f"""
+            <div class="verify-wrap" data-uid="{upload_id}" style="margin-top:16px; padding:10px 12px; border-top:1px solid #e6e9ee; background:#fafafa;">
+              <h4 style="margin:0 0 8px 0;font-size:13px;">Attach Verification Screenprint</h4>
+              <div style="display:flex;gap:8px;align-items:center;">
+                 <input type="hidden" name="return_to" value="{html.escape(return_to, quote=True)}">
+                 <button type="button" class="btn outline small btn-cap-verify" id="btnCapVerify_{upload_id}">Capture Screen</button>
+                 <button type="button" class="btn secondary small btn-submit-verify" id="btnSubmitVerify_{upload_id}" style="display:none;">Submit</button>
+                 <button type="button" class="btn danger small btn-close-verify" id="btnCloseVerify_{upload_id}" style="display:none;">Cancel</button>
+              </div>
+              <video id="vid_verify_{upload_id}" style="display:none; max-width:100%; margin-top:10px;" autoplay muted playsinline></video>
+              <div id="shot_verify_{upload_id}" style="display:none; margin-top:10px; max-width:100%;"></div>
+            </div>
+            """
+
+    rem_plan = float(ts.get("remaining_planned", 0.0))
+    topup_warning = ""
+    # "pop-up before the PPM timesheet tablet in red color just as notification thats it."
+    if module_for_upload == "PPM" and not is_submitted and rem_plan > 0 and rem_plan < 45:
+        topup_warning = f"""
+        <div style="background-color:#fee2e2; color:#b91c1c; padding:12px 16px; margin: 12px 12px 0 12px; border:1px solid #fca5a5; border-radius:6px; font-weight:600; font-size:13px; display:flex; align-items:center; gap:8px;">
+            <i class="fa fa-triangle-exclamation"></i>
+            <span>Warning: Your Remaining Planned period is {rem_plan:g} hrs. Please top up your hours for the next week.</span>
+        </div>
+        """
+
     return f"""
 <details class="ts-details">
   <summary>
@@ -1717,6 +1909,7 @@ def build_timesheet_ui(upload_id: int, return_to: str, admin_delete_html: str = 
   </summary>
 
   <div class="ts-wrap ts-form" data-upload-id="{upload_id}">
+    {topup_warning}
     <div class="ts-head">
       <div class="muted" style="font-weight:700;">
         Week Start (Sun):
@@ -1765,6 +1958,7 @@ def build_timesheet_ui(upload_id: int, return_to: str, admin_delete_html: str = 
 
       {controls_html}
     </form>
+{v_html}
   </div>
 </details>
 """
@@ -1841,10 +2035,8 @@ def build_timesheet_js():
 
     const submitBtn = container.querySelector('.ts-submit-btn');
     if(submitBtn){
-      submitBtn.disabled = (total <= 0);
-      submitBtn.title = submitBtn.disabled
-        ? 'Enter hours (Total must be > 0) before submitting.'
-        : 'Submit and lock this week (PPM and NTT must match).';
+      submitBtn.disabled = false;
+      submitBtn.title = 'Submit and lock this week (PPM and NTT must match).';
     }
   }
 
@@ -1889,6 +2081,147 @@ def build_timesheet_js():
       updateWeekUI(wrap, sunday);
       recalc(wrap);
     });
+  });
+
+  let vStream=null, vTrack=null, vBlob=null, vUrl=null, vUid=null, isVUploading=false;
+
+  function stopVStream(){
+    try { if(vTrack) vTrack.stop(); if(vStream) vStream.getTracks().forEach(t=>t.stop()); } catch(e){}
+    vStream=null; vTrack=null;
+    if(vUid) {
+      const vid = document.getElementById('vid_verify_'+vUid);
+      if(vid) { vid.pause(); vid.srcObject=null; vid.style.display='none'; }
+    }
+  }
+
+  function clearVShot(){
+    if(vUrl){ URL.revokeObjectURL(vUrl); vUrl=null; }
+    vBlob=null;
+    if(vUid){
+      const shot = document.getElementById('shot_verify_'+vUid);
+      if(shot){ shot.innerHTML=''; shot.style.display='none'; }
+      const btnCap = document.getElementById('btnCapVerify_'+vUid);
+      const btnSub = document.getElementById('btnSubmitVerify_'+vUid);
+      const btnClo = document.getElementById('btnCloseVerify_'+vUid);
+      if(btnCap) { btnCap.style.display = 'inline-block'; btnCap.disabled = false; }
+      if(btnSub) btnSub.style.display = 'none';
+      if(btnClo) btnClo.style.display = 'none';
+      vUid = null;
+    }
+  }
+
+  function waitForVVideoReady(video, timeoutMs){
+    return new Promise((resolve) => {
+      if(!video) return resolve();
+      if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) return resolve();
+      let done=false;
+      const finish = () => { if(done) return; done=true; video.onloadedmetadata=null; resolve(); };
+      const t = setTimeout(finish, timeoutMs || 2500);
+      video.onloadedmetadata = finish;
+    });
+  }
+
+  document.addEventListener('click', async function(e){
+    if(e.target.classList && e.target.classList.contains('btn-cap-verify')){
+      e.preventDefault();
+      const wrap = e.target.closest('.verify-wrap');
+      if(!wrap) return;
+      const uid = wrap.getAttribute('data-uid');
+      if(vUid && vUid !== uid) { stopVStream(); clearVShot(); }
+      vUid = uid;
+
+      const btnCap = document.getElementById('btnCapVerify_'+uid);
+      const btnSub = document.getElementById('btnSubmitVerify_'+uid);
+      const btnClo = document.getElementById('btnCloseVerify_'+uid);
+      const vid = document.getElementById('vid_verify_'+uid);
+      const shot = document.getElementById('shot_verify_'+uid);
+
+      if(!btnCap || !vid || !shot) return;
+
+      try {
+        btnCap.disabled = true;
+        vStream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: 'always' }, audio: false });
+        const tracks = vStream.getVideoTracks();
+        vTrack = (tracks && tracks[0]) ? tracks[0] : null;
+        if(vTrack) vTrack.onended = () => { stopVStream(); clearVShot(); };
+
+        vid.srcObject = vStream;
+        vid.style.display = 'block';
+
+        try { await vid.play(); } catch(err){}
+        await waitForVVideoReady(vid, 2500);
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+        const w = vid.videoWidth || 1280;
+        const h = vid.videoHeight || 720;
+        const c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(vid, 0, 0, w, h);
+
+        c.toBlob((b) => {
+          if(!b){ alert('Could not format image.'); stopVStream(); btnCap.disabled=false; return; }
+          vBlob = b;
+          if(vUrl) URL.revokeObjectURL(vUrl);
+          vUrl = URL.createObjectURL(b);
+          shot.innerHTML = '<img style="max-width:100%;border-radius:10px;box-shadow:0 4px 18px #0001" src="'+vUrl+'">';
+          shot.style.display='block';
+          
+          btnCap.style.display = 'none';
+          btnSub.style.display = 'inline-block';
+          btnSub.disabled = false;
+          btnClo.style.display = 'inline-block';
+
+          stopVStream();
+        }, 'image/png');
+      } catch(err) {
+        console.error(err);
+        alert('Capture was cancelled or denied.');
+        stopVStream();
+        btnCap.disabled = false;
+      }
+    }
+
+    if(e.target.classList && e.target.classList.contains('btn-close-verify')){
+      e.preventDefault();
+      stopVStream();
+      clearVShot();
+    }
+
+    if(e.target.classList && e.target.classList.contains('btn-submit-verify')){
+      e.preventDefault();
+      if(isVUploading) return;
+      if(!vBlob || !vUid) { alert('No image captured.'); return; }
+      
+      const btnSub = e.target;
+      isVUploading = true;
+      btnSub.disabled = true;
+
+      const fd = new FormData();
+      fd.append('upload_id', vUid);
+      
+      const form = btnSub.closest('.verify-wrap');
+      const rtNode = form ? form.querySelector('input[name="return_to"]') : null;
+      if(rtNode) fd.append('return_to', rtNode.value);
+      
+      fd.append('verification_file', vBlob, 'verification.png');
+
+      try {
+        const res = await fetch('/timesheet/verify', { method: 'POST', body: fd });
+        if(res.ok){
+          location.reload();
+        } else {
+          alert('Upload failed: ' + res.status);
+          btnSub.disabled = false;
+          isVUploading = false;
+        }
+      } catch(err) {
+        console.error(err);
+        alert('Upload error.');
+        btnSub.disabled = false;
+        isVUploading = false;
+      }
+    }
   });
 })();
 </script>
@@ -2090,7 +2423,7 @@ def build_capture_ui(module_ctx: str):
 
   // PPM / NTT: auto-upload is enabled, but Save button remains available (optional manual upload)
   if(AUTO_UPLOAD_PPM){{
-    try{{ btnSave.innerHTML = '<i class=\"fa fa-cloud-upload-alt\"></i> Save (Optional)'; }}catch(e){{}}
+    try{{ btnSave.innerHTML = '<i class=\"fa fa-cloud-upload-alt\"></i> Save'; }}catch(e){{}}
   }}
   btnCloseShot.onclick = clearShot;
 }})();
@@ -2284,7 +2617,6 @@ class Handler(SimpleHTTPRequestHandler):
                     "<select name='screen_access' id='saSel'>"
                     "<option value='BOTH' selected>PPM &amp; NTT (Both)</option>"
                     "<option value='PPM'>PPM Only</option>"
-                    "<option value='NTT'>NTT Only</option>"
                     "<option value='EMAIL_NTT'>Email &amp; NTT</option>"
                     "</select>"
                     "<div class='muted' style='margin-top:8px'>Managers/Admin automatically get Both modules (Option A).</div>"
@@ -2410,7 +2742,7 @@ class Handler(SimpleHTTPRequestHandler):
                 )
                 access_opts = "".join(
                     f"<option value='{opt}'{' selected' if sa==opt else ''}>{label}</option>"
-                    for opt, label in (("BOTH","PPM &amp; NTT (Both)"), ("PPM","PPM Only"), ("NTT","NTT Only"), ("EMAIL_NTT","Email &amp; NTT"))
+                    for opt, label in (("BOTH","PPM &amp; NTT (Both)"), ("PPM","PPM Only"), ("EMAIL_NTT","Email &amp; NTT"))
                 )
 
                 content = (
@@ -2472,6 +2804,7 @@ class Handler(SimpleHTTPRequestHandler):
                 qs = parse_qs(urlparse(self.path).query)
                 month_filter = (qs.get("month", [""])[0] or "").strip()
                 name_filter = (qs.get("name", [""])[0] or "").strip()
+                msg_filter = (qs.get("msg", [""])[0] or "").strip()
                 if not re.match(r"^\d{4}-\d{2}$", month_filter):
                     month_filter = ""
                 name_filter = name_filter[:60]
@@ -2544,9 +2877,20 @@ class Handler(SimpleHTTPRequestHandler):
                             f"</span>"
                         )
 
-                    # Admin delete button moved into timesheet header (swap)
+                    # Delete button moved into timesheet header (swap)
                     admin_delete_html = ""
+                    can_delete = False
                     if role == "Admin":
+                        can_delete = True
+                    else:
+                        try:
+                            up_date = datetime.datetime.strptime(uploaded_at, "%Y-%m-%d %H:%M:%S")
+                            if (datetime.datetime.now() - up_date).total_seconds() <= 2 * 86400:
+                                can_delete = True
+                        except:
+                            pass
+
+                    if can_delete:
                         admin_delete_html = (
                             "<form method='post' action='/upload/delete' style='display:inline;margin:0' "
                             "onsubmit=\"return confirm('Delete this upload?');\">"
@@ -2576,12 +2920,18 @@ class Handler(SimpleHTTPRequestHandler):
                         elif shown_email:
                             uploader_line = f"<div class='muted'>Uploader: <b>{html.escape(shown_email)}</b></div>"
 
-                    uploads_html += (
-                        "<div class='upload-item'>"
+                    image_col_html = (
+                        "<div style='display:flex; flex-direction:column; max-width:140px;'>"
                         f"<a class='thumb-link' href='{html.escape(file_url, quote=True)}' "
                         f"data-url='{html.escape(file_url, quote=True)}' "
-                        f"data-filename='{html.escape(original_fn, quote=True)}'>"
+                        f"data-filename='{html.escape(original_fn, quote=True)}' style='display:block;'>"
                         f"<img src='{html.escape(file_url, quote=True)}' alt='screenshot'></a>"
+                        "</div>"
+                    )
+
+                    uploads_html += (
+                        "<div class='upload-item'>"
+                        f"{image_col_html}"
                         "<div class='upload-meta'>"
                         "<div class='upload-head'>"
                         f"<div><strong>{html.escape(original_fn)}</strong> {badge}</div>"
@@ -2592,13 +2942,18 @@ class Handler(SimpleHTTPRequestHandler):
                         f"{timesheet_html}"
                         "</div></div>"
                     )
-
                 uploads_section = uploads_html if uploads_html else "<div class='muted'>No captures yet.</div>"
                 capture_ui = build_capture_ui(module_ctx)
                 modal_ui = build_saved_preview_modal()
                 ts_js = build_timesheet_js()
 
+                if msg_filter == "verify_req":
+                    alert_script = "<script>alert('Attach verification screenprint below and submit to lock this timesheet.');</script>"
+                else:
+                    alert_script = ""
+
                 content = (
+                    f"{alert_script}"
                     "<div class='card' style='max-width:1000px;margin:0 auto'>"
                     f"{capture_ui}"
                     f"{filter_ui}"
@@ -2907,30 +3262,91 @@ class Handler(SimpleHTTPRequestHandler):
                             thu = parsed.get("thu", 0.0)
                             fri = parsed.get("fri", 0.0)
                             sat = parsed.get("sat", 0.0)
-                            upsert_timesheet(upload_id, ws, mon, tue, wed, thu, fri, sat, sun)
-                            mark_timesheet_submitted(upload_id)
+                            rem_plan = parsed.get("remaining_planned", 0.0)
+                            upsert_timesheet(upload_id, ws, mon, tue, wed, thu, fri, sat, sun, remaining_planned=rem_plan)
                             logging.info("%s OCR autofill ok upload_id=%s week_start=%s", module_val, upload_id, ws)
                     except Exception:
                         logging.exception("%s OCR extraction failed (non-fatal).", module_val)
 
 
                 self.send_response(303)
-                self.send_header("Location", f"/upload/{module_val}")
+                if module_val == "PPM":
+                    self.send_header("Location", f"/upload/{module_val}?msg=verify_req")
+                else:
+                    self.send_header("Location", f"/upload/{module_val}")
                 self.end_headers()
                 return
 
-            # DELETE CAPTURE (Admin only)
+            # DELETE CAPTURE
             if path == "/upload/delete":
-                if role != "Admin":
-                    return self._msg("Access denied: only Admin can delete uploads.", display_name)
-
                 upload_id = form.get("upload_id")
                 return_to = normalize_return_to(form.get("return_to") or "/upload/PPM", role, session_email)
 
                 if not upload_id:
                     return self._msg("Upload ID is required to delete.", display_name)
 
+                uid = int(upload_id)
+                if role != "Admin":
+                    owner = get_upload_owner(uid)
+                    if not owner or owner.lower() != session_email.lower():
+                        return self._msg("Access denied: you can only delete your own uploads.", display_name)
+                    
+                    with closing(sqlite3.connect(DB_FILE)) as conn:
+                        cur = conn.cursor()
+                        cur.execute("SELECT uploaded_at FROM uploads WHERE id = ?", (uid,))
+                        upload_row = cur.fetchone()
+                        
+                    if upload_row:
+                        try:
+                            up_date = datetime.datetime.strptime(upload_row[0], "%Y-%m-%d %H:%M:%S")
+                            if (datetime.datetime.now() - up_date).total_seconds() > 2 * 86400:
+                                return self._msg("Access denied: you can only delete uploads within 2 days.", display_name)
+                        except:
+                            pass
+
                 delete_upload(int(upload_id))
+                self.send_response(303)
+                self.send_header("Location", return_to)
+                self.end_headers()
+                return
+
+            # VERIFICATION UPLOAD
+            if path == "/timesheet/verify":
+                upload_id = form.get("upload_id")
+                return_to = normalize_return_to(form.get("return_to") or "/upload/PPM", role, session_email)
+
+                if not upload_id:
+                    return self._msg("Upload ID is required.", display_name)
+
+                f = form.get("verification_file")
+                if not f or not isinstance(f, dict) or not f.get("filename"):
+                    return self._msg("No file selected for verification.", display_name)
+
+                user_disp = get_display_name_by_email(session_email) or (session_email or "user")
+                if "@" in user_disp:
+                    user_disp = user_disp.split("@", 1)[0]
+                user_safe = _safe_name_part(user_disp, default="user")
+
+                now = datetime.datetime.now()
+                base, ext = os.path.splitext(f["filename"])
+                ext = ext or ".png"
+                timestamp = now.strftime("%Y%m%d%H%M%S")
+                safe_base = re.sub(r"[^a-zA-Z0-9._-]+", "_", base)[:80] or "verification"
+                stored_fn = f"verify_{user_safe}_{safe_base}_{timestamp}{ext}".replace(" ", "_")
+                save_path = os.path.join(UPLOAD_DIR, stored_fn)
+
+                counter = 0
+                while os.path.exists(save_path):
+                    counter += 1
+                    stored_fn = f"verify_{user_safe}_{safe_base}_{timestamp}_{counter}{ext}"
+                    save_path = os.path.join(UPLOAD_DIR, stored_fn)
+
+                with open(save_path, "wb") as out:
+                    out.write(f["content"])
+
+                save_verification_filename(int(upload_id), stored_fn)
+                mark_timesheet_submitted(int(upload_id))
+                
                 self.send_response(303)
                 self.send_header("Location", return_to)
                 self.end_headers()
@@ -3006,8 +3422,7 @@ class Handler(SimpleHTTPRequestHandler):
 
                 week_start, mon, tue, wed, thu, fri, sat, sun, total = parse_timesheet_payload()
 
-                if total <= 0:
-                    return self._msg("Cannot submit: Enter hours and Save Hours before submitting (Total must be > 0).", display_name)
+                # We now allow submitting even if total is 0, for verification purposes
 
                 owner = get_upload_owner(uid) or (session_email or "").strip().lower()
 
