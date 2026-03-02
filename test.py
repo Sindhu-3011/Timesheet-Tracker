@@ -1793,6 +1793,7 @@ def build_timesheet_ui(upload_id: int, return_to: str, admin_delete_html: str = 
 
     is_submitted = int(ts.get("submitted", 0)) == 1
     disabled_attr = "disabled" if is_submitted else ""
+    date_disabled_attr = "disabled" if is_submitted else ""
 
     if module_for_upload in ("PPM", "NTT"):
         disabled_attr = "readonly style='pointer-events:none; background-color:#f4f5f7; color:#7d8597; border-color:#e6e9ee;'" if not is_submitted else "disabled"
@@ -1898,7 +1899,7 @@ def build_timesheet_ui(upload_id: int, return_to: str, admin_delete_html: str = 
         topup_warning = f"""
         <div style="background-color:#fee2e2; color:#b91c1c; padding:12px 16px; margin: 12px 12px 0 12px; border:1px solid #fca5a5; border-radius:6px; font-weight:600; font-size:13px; display:flex; align-items:center; gap:8px;">
             <i class="fa fa-triangle-exclamation"></i>
-            <span>Warning: Your Remaining Planned period is {rem_plan:g} hrs. Please top up your hours for the next week.</span>
+            <span>Warning: Your Remaining Planned period is {rem_plan:g} hrs. Please contact the manager and top up your hours for the next week.</span>
         </div>
         """
 
@@ -1914,7 +1915,7 @@ def build_timesheet_ui(upload_id: int, return_to: str, admin_delete_html: str = 
       <div class="muted" style="font-weight:700;">
         Week Start (Sun):
         <input class="ts-week" type="date" value="{week_start_iso}"
-               style="width:auto;display:inline-block;margin-left:8px;" {disabled_attr}>
+               style="width:auto;display:inline-block;margin-left:8px;" {date_disabled_attr}>
       </div>
       <div class="muted" style="font-weight:700; display:flex; align-items:center; gap:10px;">
         <span>Total: <span class="ts-total" id="ts_total_lbl_{upload_id}">{total}</span></span>
