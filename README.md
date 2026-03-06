@@ -9,9 +9,11 @@ By leveraging Optical Character Recognition (OCR), the system intelligently atte
 - **Single-File Server Application**: Runs on the built-in standard Python `http.server`, completely avoiding heavy web framework dependencies.
 - **Image Uploads & OCR Extraction**: Automatically extracts inputted timesheet hours directly from PPM and NTT interface screenshots using `EasyOCR` and `Pillow` image manipulation.
 - **Role-Based Access Control**:
-  - **Admin**: Has full access, can manage users, oversee all timesheet submissions, delete entries, configure email reminders, and export data.
-  - **Manager**: Has managerial access over submissions and export tools but lacks admin user management rights.
-  - **Employee**: Can view, track, and upload timesheets just for their own account depending on configured screen module access (PPM, NTT, or both).
+  - **Admin**: Has full access, can manage users, oversee all timesheet submissions, delete entries (even after submission), configure email reminders, and export data.
+  - **Manager**: Has managerial access over submissions, help viewing, and export tools but lacks admin user management and help editing rights.
+  - **Employee**: Can view, track, and upload timesheets for their own account, and access the Help page content.
+- **Help Center Access**: Integrated Help page where all users can view guidance, while editing capabilities are strictly restricted to Administrators.
+- **Automated Capture Workflow**: Streamlined "One-Click" capture process for PPM, NTT, and EMAIL modules that automatically takes, shows, and saves screen prints without requiring manual save confirmation.
 - **Strict Timesheet Verification Rules**: Requires that if an employee is working on both PPM and NTT, the hours correctly mirror each other before allowing a final locked submission. 
 - **Export Capabilities**: Converts submitted tracking timelines directly to cleanly formatted `.xlsx` Excel spreadsheets utilizing `openpyxl`.
 - **Automated Database Setup**: Automatically builds and queries a local `users.db` SQLite database using standardized schema handling. 
