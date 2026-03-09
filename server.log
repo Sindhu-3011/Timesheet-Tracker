@@ -551,3 +551,37 @@ OSError: not supported for mode RGBA
 2026-03-06 15:07:06,975 INFO Starting server...
 2026-03-06 15:07:06,975 INFO URL: http://127.0.0.1:8000
 2026-03-06 15:10:29,403 INFO Server stopped by user
+2026-03-06 16:56:18,778 INFO Starting server...
+2026-03-06 16:56:18,779 INFO URL: http://127.0.0.1:8000
+2026-03-09 09:58:06,606 INFO Starting server...
+2026-03-09 09:58:06,606 INFO URL: http://127.0.0.1:8000
+2026-03-09 12:50:43,930 INFO Server stopped by user
+2026-03-09 12:50:57,224 INFO Starting server...
+2026-03-09 12:50:57,225 INFO URL: http://127.0.0.1:8000
+2026-03-09 12:57:39,999 INFO Server stopped by user
+2026-03-09 12:57:49,272 INFO Starting server...
+2026-03-09 12:57:49,273 INFO URL: http://127.0.0.1:8000
+2026-03-09 13:01:59,619 INFO ===== UPLOAD RECEIVED: module=PPM upload_id=146 path=uploads\PPM_admin_20260309_130159_20260309130159.png =====
+2026-03-09 13:02:05,937 INFO PPM OCR dual-pass row values: 11=[0.0, 9.0, 9.0, 0.0, 9.0, 9.0, 0.0, 45.0], 6=[0.0, 9.0, 9.0, 9.0, 9.0, 0.0, 0.0, 45.0] => {'week_start': '', '_found_days': 7, 'remaining_planned': 73.7, 'sun': 0.0, 'mon': 9.0, 'tue': 9.0, 'wed': 9.0, 'thu': 9.0, 'fri': 9.0, 'sat': 0.0}
+2026-03-09 13:02:05,978 INFO PPM OCR autofill ok upload_id=146 week_start=2026-03-08
+2026-03-09 13:02:25,262 INFO ===== UPLOAD RECEIVED: module=VERIFY upload_id=147 path=uploads\PPM_146_20260309130225.png =====
+2026-03-09 13:03:47,008 INFO ===== UPLOAD RECEIVED: module=PPM upload_id=148 path=uploads\PPM_admin_20260309_130346_20260309130346.png =====
+2026-03-09 13:03:48,566 INFO PPM OCR dual-pass row values: 11=[0.0, 9.0, 9.0, 0.0, 9.0, 9.0, 0.0, 45.0], 6=[0.0, 9.0, 9.0, 9.0, 9.0, 0.0, 0.0, 45.0] => {'week_start': '', '_found_days': 7, 'remaining_planned': 73.7, 'sun': 0.0, 'mon': 9.0, 'tue': 9.0, 'wed': 9.0, 'thu': 9.0, 'fri': 9.0, 'sat': 0.0}
+2026-03-09 13:03:48,604 INFO PPM OCR autofill ok upload_id=148 week_start=2026-03-08
+2026-03-09 13:04:26,489 INFO ===== UPLOAD RECEIVED: module=PPM upload_id=149 path=uploads\PPM_admin_20260309_130426_20260309130426.png =====
+2026-03-09 13:04:28,095 INFO PPM OCR dual-pass row values: 11=[0.0, 9.0, 9.0, 0.0, 9.0, 9.0, 0.0, 45.0], 6=[0.0, 9.0, 9.0, 9.0, 9.0, 0.0, 0.0, 45.0] => {'week_start': '', '_found_days': 7, 'remaining_planned': 73.7, 'sun': 0.0, 'mon': 9.0, 'tue': 9.0, 'wed': 9.0, 'thu': 9.0, 'fri': 9.0, 'sat': 0.0}
+2026-03-09 13:04:28,143 INFO PPM OCR autofill ok upload_id=149 week_start=2026-03-08
+2026-03-09 13:28:53,928 INFO Server stopped by user
+2026-03-09 13:29:31,699 INFO Starting server...
+2026-03-09 13:29:31,700 INFO URL: http://127.0.0.1:8000
+2026-03-09 13:30:00,366 INFO ===== UPLOAD RECEIVED: module=PPM upload_id=150 path=uploads\PPM_admin_20260309_133000_20260309133000.png =====
+2026-03-09 13:30:04,161 INFO PPM OCR dual-pass row values: 11=[0.0, 9.0, 9.0, 0.0, 9.0, 9.0, 0.0, 45.0], 6=[0.0, 9.0, 9.0, 9.0, 9.0, 0.0, 0.0, 45.0] => {'week_start': '2026-03-01', '_found_days': 7, 'remaining_planned': 73.7, 'sun': 0.0, 'mon': 9.0, 'tue': 9.0, 'wed': 9.0, 'thu': 9.0, 'fri': 9.0, 'sat': 0.0}
+2026-03-09 13:30:04,202 INFO PPM OCR autofill ok upload_id=150 week_start=2026-03-01
+2026-03-09 13:32:59,540 INFO ===== UPLOAD RECEIVED: module=PPM upload_id=151 path=uploads\PPM_admin_20260309_133259_20260309133259.png =====
+2026-03-09 13:33:01,230 INFO PPM OCR dual-pass row values: 11=[0.0, 9.0, 9.0, 0.0, 9.0, 9.0, 0.0, 45.0], 6=[0.0, 9.0, 9.0, 9.0, 9.0, 0.0, 0.0, 45.0] => {'week_start': '2026-03-01', '_found_days': 7, 'remaining_planned': 73.7, 'sun': 0.0, 'mon': 9.0, 'tue': 9.0, 'wed': 9.0, 'thu': 9.0, 'fri': 9.0, 'sat': 0.0}
+2026-03-09 13:33:01,276 INFO PPM OCR autofill ok upload_id=151 week_start=2026-03-01
+2026-03-09 13:33:18,924 INFO ===== UPLOAD RECEIVED: module=VERIFY upload_id=152 path=uploads\PPM_151_20260309133318.png =====
+2026-03-09 13:33:35,076 INFO ===== UPLOAD RECEIVED: module=PPM upload_id=153 path=uploads\PPM_admin_20260309_133335_20260309133335.png =====
+2026-03-09 13:33:36,919 INFO PPM OCR dual-pass row values: 11=[0.0, 9.0, 9.0, 9.0, 9.0, 9.0, 0.0, 45.0], 6=[0.0, 9.0, 9.0, 9.0, 9.0, 9.0, 0.0, 45.0] => {'week_start': '2026-02-22', '_found_days': 7, 'remaining_planned': 0.2, 'sun': 0.0, 'mon': 9.0, 'tue': 9.0, 'wed': 9.0, 'thu': 9.0, 'fri': 9.0, 'sat': 0.0}
+2026-03-09 13:33:37,008 INFO PPM OCR autofill ok upload_id=153 week_start=2026-02-22
+2026-03-09 18:10:22,818 INFO Server stopped by user

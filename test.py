@@ -1270,20 +1270,40 @@ def _preprocess_for_ocr(img: Image.Image) -> Image.Image:
 def _parse_week_start_from_ppm_text(text: str):
     if not text:
         return None
-    t = ' '.join(text.split())
+    # Normalize OCR whitespace to single space
+    t = ' '.join(text.split()).lower()
+    
+    # regex for "Month D to (Month) D, YYYY" or variations
+    # month_pat: Match first 3 chars and allow any number of letters after.
+    month_p = r"(jan[a-z]*|feb[a-z]*|mar[a-z]*|apr[a-z]*|may[a-z]*|jun[a-z]*|jul[a-z]*|aug[a-z]*|sep[a-z]*|oct[a-z]*|nov[a-z]*|dec[a-z]*)"
+    
+    # 1: month1
+    # 2: day1
+    # 3: optional month2
+    # 4: day2
+    # 5: year
     m = re.search(
-        r"(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2})\s+to\s+"
-        r"(?:(January|February|March|April|May|June|July|August|September|October|November|December)\s+)?(\d{1,2}),\s*(\d{4})",
+        month_p + r"\s+(\d{1,2})\s+(?:to|t0|1o|f0|[a-z]{1,3})\s+(?:" + month_p + r"\s+)?(\d{1,2})[,\s]+(\d{4})",
         t,
         re.IGNORECASE,
     )
     if not m:
-        return None
-    month1 = (m.group(1) or '').lower()
-    day1 = int(m.group(2))
-    year = int(m.group(5))
+        # Fallback to Month Day, Year if "to" middle part failed
+        m = re.search(month_p + r"\s+(\d{1,2}).*?(\d{4})", t, re.IGNORECASE)
+        if not m: return None
+        
+        month1_str = m.group(1).lower()[:3]
+        day1_int = int(m.group(2))
+        year_int = int(m.group(3))
+    else:
+        month1_str = m.group(1).lower()[:3]
+        day1_int = int(m.group(2))
+        year_int = int(m.group(5))
+        
     try:
-        start = datetime.date(year, MONTHS_MAP[month1], day1)
+        month1_val = MONTHS_MAP.get(month1_str)
+        if not month1_val: return None
+        start = datetime.date(year_int, month1_val, day1_int)
         ws = _sunday_of_date(start)
         return ws.isoformat()
     except Exception:
@@ -1427,6 +1447,13 @@ def extract_ppm_hours_from_screenshot_total_row(image_path: str):
 
     # Run PSM 11 and PSM 6 to mitigate Tesseract misreading '9' as '0' on certain modes
     vals_11, week_start, rem11 = _extract_row_with_psm('--psm 11', get_week_start=True)
+    if not week_start:
+        # Fallback to PSM 3 for a better shot at finding the header date
+        _, week_start, _ = _extract_row_with_psm('--psm 3', get_week_start=True)
+        if not week_start:
+            # Final attempt for week_start with PSM 6
+            _, week_start, _ = _extract_row_with_psm('--psm 6', get_week_start=True)
+
     vals_6, _, rem6 = _extract_row_with_psm('--psm 6', get_week_start=False)
 
     day_keys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
@@ -3767,11 +3794,16 @@ def build_sidebar_for_role(role, screen_access="BOTH", can_email=0, can_export=0
     screen_access = normalize_screen_access(screen_access)
 
     module_links = []
-    if role == "Admin" or screen_access == "BOTH":
+    if role == "Admin":
         module_links = [
             '<a href="/upload/PPM" title="PPM screen prints">PPM</a>',
             '<a href="/upload/NTT" title="NTT screen prints">NTT</a>',
             '<a href="/upload/EMAIL" title="Email screen prints">EMAIL</a>',
+        ]
+    elif screen_access == "BOTH":
+        module_links = [
+            '<a href="/upload/PPM" title="PPM screen prints">PPM</a>',
+            '<a href="/upload/NTT" title="NTT screen prints">NTT</a>',
         ]
     elif screen_access == "PPM":
         module_links = ['<a href="/upload/PPM" title="PPM screen prints">PPM</a>']
@@ -6197,7 +6229,7 @@ class Handler(SimpleHTTPRequestHandler):
                 if screen_access in ("NTT", "BOTH"):
                     allowed_prefixes.append("/upload/NTT")
 
-                if screen_access in ("EMAIL", "BOTH"):
+                if screen_access == "EMAIL":
                     allowed_prefixes.append("/upload/EMAIL")
                 if not (path in allowed_exact or any(path.startswith(p) for p in allowed_prefixes)):
                     return self._msg("Access denied: your role does not have permission to access this page.", display_name)
@@ -6239,7 +6271,7 @@ class Handler(SimpleHTTPRequestHandler):
                     "</select>"
                     "<label>Screen Access (Employee/Manager)</label>"
                     "<select name='screen_access' id='saSel'>"
-                    "<option value='BOTH' selected>PPM &amp; NTT &amp; EMAIL (All)</option>"
+                    "<option value='BOTH' selected>PPM &amp; NTT Only</option>"
                     "<option value='PPM'>PPM Only</option><option value='EMAIL'>EMAIL Only</option>"                    "</select>"
                     "<hr style='margin:16px 0;border:none;border-top:1px solid #eef2f7'>"
                     "<h3 style='margin:0 0 6px'>Module Access</h3>"
@@ -6524,7 +6556,7 @@ f"<input type='hidden' name='field_id' value='{fid}'>"
                 )
                 access_opts = "".join(
                     f"<option value='{opt}'{' selected' if sa==opt else ''}>{label}</option>"
-                    for opt, label in (("BOTH","PPM &amp; NTT &amp; EMAIL (All)"), ("PPM","PPM Only"), ("NTT","NTT Only"))
+                    for opt, label in (("BOTH","PPM &amp; NTT Only"), ("PPM","PPM Only"), ("EMAIL","EMAIL Only"))
                 )
 
                 content = (
@@ -6561,6 +6593,7 @@ f"<input type='hidden' name='field_id' value='{fid}'>"
                     "</select>"
                     "<label>Password (leave blank to keep unchanged)</label>"
                     "<input type='password' name='password' placeholder='********'>"
+                    f"{custom_fields_html}"
                     "<button class='btn' type='submit'>Save Changes</button>"
                     "</form>"
                     "<script>"
@@ -6601,7 +6634,7 @@ f"<input type='hidden' name='field_id' value='{fid}'>"
                         return self._msg("Access denied: you do not have permission for PPM module.", display_name)
                     if module_ctx == "NTT" and screen_access not in ("NTT", "BOTH"):
                         return self._msg("Access denied: you do not have permission for NTT module.", display_name)
-                    if module_ctx == "EMAIL" and screen_access not in ("EMAIL", "BOTH"):
+                    if module_ctx == "EMAIL" and screen_access != "EMAIL":
                         return self._msg("Access denied: you do not have permission for EMAIL module.", display_name)
 
                 # Admin filters
@@ -7532,7 +7565,7 @@ f"<input type='hidden' name='field_id' value='{fid}'>"
                         return self._msg("Access denied: you do not have permission to upload to PPM.", display_name)
                     if module_val == "NTT" and screen_access not in ("NTT", "BOTH"):
                         return self._msg("Access denied: you do not have permission to upload to NTT.", display_name)
-                    if module_val == "EMAIL" and screen_access not in ("EMAIL", "BOTH"):
+                    if module_val == "EMAIL" and screen_access != "EMAIL":
                         return self._msg("Access denied: you do not have permission to upload to EMAIL.", display_name)
                     if module_val == "VERIFY" and screen_access not in ("PPM", "BOTH"):
                         return self._msg("Access denied: you do not have permission to upload verification screenprints.", display_name)
