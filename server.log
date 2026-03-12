@@ -585,3 +585,449 @@ OSError: not supported for mode RGBA
 2026-03-09 13:33:36,919 INFO PPM OCR dual-pass row values: 11=[0.0, 9.0, 9.0, 9.0, 9.0, 9.0, 0.0, 45.0], 6=[0.0, 9.0, 9.0, 9.0, 9.0, 9.0, 0.0, 45.0] => {'week_start': '2026-02-22', '_found_days': 7, 'remaining_planned': 0.2, 'sun': 0.0, 'mon': 9.0, 'tue': 9.0, 'wed': 9.0, 'thu': 9.0, 'fri': 9.0, 'sat': 0.0}
 2026-03-09 13:33:37,008 INFO PPM OCR autofill ok upload_id=153 week_start=2026-02-22
 2026-03-09 18:10:22,818 INFO Server stopped by user
+2026-03-09 18:55:51,023 INFO Starting server...
+2026-03-09 18:55:51,023 INFO URL: http://127.0.0.1:8000
+2026-03-11 09:40:44,010 INFO Starting server...
+2026-03-11 09:40:44,011 INFO URL: http://127.0.0.1:8000
+2026-03-11 09:43:01,016 INFO ===== UPLOAD RECEIVED: module=PPM upload_id=154 path=uploads\PPM_admin_20260311_094300_20260311094300.png =====
+2026-03-11 09:43:06,802 INFO PPM OCR dual-pass row values: 11=[0.0, 9.0, 9.0, 9.0, 9.0, 9.0, 0.0, 45.0], 6=[0.0, 9.0, 9.0, 9.0, 9.0, 9.0, 0.0, 45.0] => {'week_start': '2026-03-08', '_found_days': 7, 'remaining_planned': 28.5, 'sun': 0.0, 'mon': 9.0, 'tue': 9.0, 'wed': 9.0, 'thu': 9.0, 'fri': 9.0, 'sat': 0.0}
+2026-03-11 09:43:06,841 INFO PPM OCR autofill ok upload_id=154 week_start=2026-03-08
+2026-03-11 09:43:31,677 INFO ===== UPLOAD RECEIVED: module=VERIFY upload_id=155 path=uploads\PPM_154_20260311094331.png =====
+2026-03-11 10:42:32,399 INFO Server stopped by user
+2026-03-11 10:42:50,630 INFO Starting server...
+2026-03-11 10:42:50,630 INFO URL: http://127.0.0.1:8000
+2026-03-11 10:44:07,239 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=156 path=uploads\NTT_REPORT_admin_20260311_104407_20260311104407.png =====
+2026-03-11 10:51:05,799 INFO Server stopped by user
+2026-03-11 10:51:31,660 INFO Starting server...
+2026-03-11 10:51:31,660 INFO URL: http://127.0.0.1:8000
+2026-03-11 12:32:38,262 INFO Server stopped by user
+2026-03-11 12:33:02,067 INFO Starting server...
+2026-03-11 12:33:02,068 INFO URL: http://127.0.0.1:8000
+2026-03-11 12:36:06,724 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=157 path=uploads\NTT_REPORT_admin_20260311_123606_20260311123606.png =====
+2026-03-11 12:36:26,188 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=158 path=uploads\NTT_REPORT_admin_20260311_123626_20260311123626.png =====
+2026-03-11 13:50:14,107 INFO Server stopped by user
+2026-03-11 13:50:56,417 INFO Starting server...
+2026-03-11 13:50:56,417 INFO URL: http://127.0.0.1:8000
+2026-03-11 13:52:39,634 INFO ===== UPLOAD RECEIVED: module=NTT upload_id=159 path=uploads\NTT_admin_20260311_135239_20260311135239.png =====
+2026-03-11 13:52:39,634 INFO NTT OCR starting for upload_id=159 path=uploads\NTT_admin_20260311_135239_20260311135239.png
+2026-03-11 13:52:43,135 INFO NTT OCR: col_x={}, using entered_x=1024.5
+2026-03-11 13:52:43,135 INFO NTT OCR: day_header_ys = {'sun': 263.5, 'mon': 383.5, 'tue': 501.5, 'wed': 620.5, 'thu': 738.5, 'sat': 976.5, 'fri': 858.5}
+2026-03-11 13:52:43,139 INFO NTT OCR result: {'sun': 8.0, 'mon': 27.0, 'tue': 29.0, 'wed': 31.0, 'thu': 33.0, 'fri': 35.0, 'sat': 14.0, '_found_days': 7, 'has_draft': False, 'week_start': '2026-03-08'}
+2026-03-11 13:52:43,140 INFO NTT OCR parsed result: {'sun': 8.0, 'mon': 27.0, 'tue': 29.0, 'wed': 31.0, 'thu': 33.0, 'fri': 35.0, 'sat': 14.0, '_found_days': 7, 'has_draft': False, 'week_start': '2026-03-08'}
+2026-03-11 13:52:43,140 INFO NTT OCR upsert: upload_id=159 ws=2026-03-08 mon=27.0 tue=29.0 wed=31.0 thu=33.0 fri=35.0 sat=14.0 sun=8.0
+2026-03-11 13:52:43,169 INFO NTT OCR autofill ok upload_id=159 week_start=2026-03-08 found_days=7
+2026-03-11 14:01:43,014 INFO Server stopped by user
+2026-03-11 14:01:58,416 INFO Starting server...
+2026-03-11 14:01:58,417 INFO URL: http://127.0.0.1:8000
+2026-03-11 14:03:04,689 INFO ===== UPLOAD RECEIVED: module=NTT upload_id=160 path=uploads\NTT_admin_20260311_140304_20260311140304.png =====
+2026-03-11 14:03:04,690 INFO NTT OCR starting for upload_id=160 path=uploads\NTT_admin_20260311_140304_20260311140304.png
+2026-03-11 14:03:09,644 INFO NTT OCR: col_x={'recorded': 937.5, 'assignment': 1066.5, 'draft': 2092.0, 'status': 2246.0}, using entered_x=1912.0
+2026-03-11 14:03:09,645 INFO NTT OCR: day_header_ys = {'sun': 333.5, 'mon': 453.5, 'tue': 571.5, 'wed': 691.5, 'thu': 808.5, 'sat': 1046.0, 'fri': 928.5}
+2026-03-11 14:03:09,653 INFO NTT OCR result: {'sun': 0.0, 'mon': 9.0, 'tue': 0.0, 'wed': 0.0, 'thu': 0.0, 'fri': 0.0, 'sat': 0.0, '_found_days': 7, 'has_draft': False, 'week_start': '2026-03-08'}
+2026-03-11 14:03:09,657 INFO NTT OCR parsed result: {'sun': 0.0, 'mon': 9.0, 'tue': 0.0, 'wed': 0.0, 'thu': 0.0, 'fri': 0.0, 'sat': 0.0, '_found_days': 7, 'has_draft': False, 'week_start': '2026-03-08'}
+2026-03-11 14:03:09,658 INFO NTT OCR upsert: upload_id=160 ws=2026-03-08 mon=9.0 tue=0.0 wed=0.0 thu=0.0 fri=0.0 sat=0.0 sun=0.0
+2026-03-11 14:03:09,715 INFO NTT OCR autofill ok upload_id=160 week_start=2026-03-08 found_days=7
+2026-03-11 14:04:50,788 INFO ===== UPLOAD RECEIVED: module=NTT upload_id=161 path=uploads\NTT_admin_20260311_140450_20260311140450.png =====
+2026-03-11 14:04:50,789 INFO NTT OCR starting for upload_id=161 path=uploads\NTT_admin_20260311_140450_20260311140450.png
+2026-03-11 14:04:53,604 INFO NTT OCR: col_x={'recorded': 937.5, 'assignment': 1066.5, 'draft': 2092.0, 'status': 2246.0}, using entered_x=1912.0
+2026-03-11 14:04:53,606 INFO NTT OCR: day_header_ys = {'sun': 333.5, 'mon': 453.5, 'tue': 571.0, 'wed': 690.5, 'thu': 808.5, 'sat': 1046.0, 'fri': 928.5}
+2026-03-11 14:04:53,612 INFO NTT OCR result: {'sun': 0.0, 'mon': 9.0, 'tue': 9.0, 'wed': 9.0, 'thu': 9.0, 'fri': 9.0, 'sat': 0.0, '_found_days': 7, 'has_draft': False, 'week_start': '2026-03-01'}
+2026-03-11 14:04:53,615 INFO NTT OCR parsed result: {'sun': 0.0, 'mon': 9.0, 'tue': 9.0, 'wed': 9.0, 'thu': 9.0, 'fri': 9.0, 'sat': 0.0, '_found_days': 7, 'has_draft': False, 'week_start': '2026-03-01'}
+2026-03-11 14:04:53,616 INFO NTT OCR upsert: upload_id=161 ws=2026-03-01 mon=9.0 tue=9.0 wed=9.0 thu=9.0 fri=9.0 sat=0.0 sun=0.0
+2026-03-11 14:04:53,669 INFO NTT OCR autofill ok upload_id=161 week_start=2026-03-01 found_days=7
+2026-03-11 14:05:14,275 INFO ===== UPLOAD RECEIVED: module=NTT upload_id=162 path=uploads\NTT_admin_20260311_140514_20260311140514.png =====
+2026-03-11 14:05:14,276 INFO NTT OCR starting for upload_id=162 path=uploads\NTT_admin_20260311_140514_20260311140514.png
+2026-03-11 14:05:16,831 INFO NTT OCR: col_x={'recorded': 937.5, 'assignment': 1066.5, 'draft': 2092.0, 'status': 2246.0}, using entered_x=1912.0
+2026-03-11 14:05:16,833 INFO NTT OCR: day_header_ys = {'sun': 333.5, 'mon': 453.5, 'tue': 571.5, 'wed': 691.5, 'thu': 808.5, 'sat': 1046.0, 'fri': 928.5}
+2026-03-11 14:05:16,837 INFO NTT OCR result: {'sun': 0.0, 'mon': 9.0, 'tue': 0.0, 'wed': 0.0, 'thu': 0.0, 'fri': 0.0, 'sat': 0.0, '_found_days': 7, 'has_draft': False, 'week_start': '2026-03-08'}
+2026-03-11 14:05:16,840 INFO NTT OCR parsed result: {'sun': 0.0, 'mon': 9.0, 'tue': 0.0, 'wed': 0.0, 'thu': 0.0, 'fri': 0.0, 'sat': 0.0, '_found_days': 7, 'has_draft': False, 'week_start': '2026-03-08'}
+2026-03-11 14:05:16,841 INFO NTT OCR upsert: upload_id=162 ws=2026-03-08 mon=9.0 tue=0.0 wed=0.0 thu=0.0 fri=0.0 sat=0.0 sun=0.0
+2026-03-11 14:05:16,897 INFO NTT OCR autofill ok upload_id=162 week_start=2026-03-08 found_days=7
+2026-03-11 14:08:59,209 INFO Server stopped by user
+2026-03-11 14:09:23,535 INFO Starting server...
+2026-03-11 14:09:23,536 INFO URL: http://127.0.0.1:8000
+2026-03-11 14:31:12,196 INFO ===== UPLOAD RECEIVED: module=NTT upload_id=163 path=uploads\NTT_admin_20260311_143112_20260311143112.png =====
+2026-03-11 14:31:12,218 INFO NTT OCR starting for upload_id=163 path=uploads\NTT_admin_20260311_143112_20260311143112.png
+2026-03-11 14:31:17,040 INFO NTT OCR: col_x={'recorded': 937.5, 'assignment': 1066.5, 'draft': 2092.0, 'status': 2246.0}, using entered_x=1912.0
+2026-03-11 14:31:17,043 INFO NTT OCR: day_header_ys = {'sun': 333.5, 'mon': 453.5, 'tue': 571.5, 'wed': 691.5, 'thu': 808.5, 'sat': 1046.0, 'fri': 928.5}
+2026-03-11 14:31:17,078 INFO NTT OCR result: {'sun': 0.0, 'mon': 9.0, 'tue': 0.0, 'wed': 0.0, 'thu': 0.0, 'fri': 0.0, 'sat': 0.0, '_found_days': 7, 'has_draft': False, 'week_start': '2026-03-08'}
+2026-03-11 14:31:17,085 INFO NTT OCR parsed result: {'sun': 0.0, 'mon': 9.0, 'tue': 0.0, 'wed': 0.0, 'thu': 0.0, 'fri': 0.0, 'sat': 0.0, '_found_days': 7, 'has_draft': False, 'week_start': '2026-03-08'}
+2026-03-11 14:31:17,088 INFO NTT OCR upsert: upload_id=163 ws=2026-03-08 mon=9.0 tue=0.0 wed=0.0 thu=0.0 fri=0.0 sat=0.0 sun=0.0
+2026-03-11 14:31:17,171 INFO NTT OCR autofill ok upload_id=163 week_start=2026-03-08 found_days=7
+2026-03-11 14:36:15,573 INFO Server stopped by user
+2026-03-11 14:36:30,123 INFO Starting server...
+2026-03-11 14:36:30,124 INFO URL: http://127.0.0.1:8000
+2026-03-11 14:36:58,016 INFO ===== UPLOAD RECEIVED: module=NTT upload_id=164 path=uploads\NTT_admin_20260311_143657_20260311143657.png =====
+2026-03-11 14:36:58,017 INFO NTT OCR starting for upload_id=164 path=uploads\NTT_admin_20260311_143657_20260311143657.png
+2026-03-11 14:37:02,332 INFO NTT OCR: col_x={'recorded': 937.5, 'assignment': 1066.5, 'draft': 2092.0, 'status': 2246.0}, using entered_x=1912.0
+2026-03-11 14:37:02,334 INFO NTT OCR: day_header_ys = {'sun': 333.5, 'mon': 453.5, 'tue': 571.5, 'wed': 691.5, 'thu': 808.5, 'sat': 1046.0, 'fri': 928.5}
+2026-03-11 14:37:02,341 INFO NTT OCR result: {'sun': 0.0, 'mon': 9.0, 'tue': 0.0, 'wed': 0.0, 'thu': 0.0, 'fri': 0.0, 'sat': 0.0, '_found_days': 7, 'has_draft': False, 'week_start': '2026-03-08'}
+2026-03-11 14:37:02,344 INFO NTT OCR parsed result: {'sun': 0.0, 'mon': 9.0, 'tue': 0.0, 'wed': 0.0, 'thu': 0.0, 'fri': 0.0, 'sat': 0.0, '_found_days': 7, 'has_draft': False, 'week_start': '2026-03-08'}
+2026-03-11 14:37:02,345 INFO NTT OCR upsert: upload_id=164 ws=2026-03-08 mon=9.0 tue=0.0 wed=0.0 thu=0.0 fri=0.0 sat=0.0 sun=0.0
+2026-03-11 14:37:02,401 INFO NTT OCR autofill ok upload_id=164 week_start=2026-03-08 found_days=7
+2026-03-11 14:42:08,596 INFO Server stopped by user
+2026-03-11 14:42:32,161 INFO Starting server...
+2026-03-11 14:42:32,162 INFO URL: http://127.0.0.1:8000
+2026-03-11 14:43:08,298 INFO ===== UPLOAD RECEIVED: module=NTT upload_id=165 path=uploads\NTT_admin_20260311_144308_20260311144308.png =====
+2026-03-11 14:43:08,299 INFO NTT OCR starting for upload_id=165 path=uploads\NTT_admin_20260311_144308_20260311144308.png
+2026-03-11 14:43:13,199 INFO NTT OCR: col_x={'recorded': 937.5, 'assignment': 1066.5, 'draft': 2092.0, 'status': 2246.0}, using entered_x=1912.0
+2026-03-11 14:43:13,201 INFO NTT OCR: day_header_ys = {'sun': 333.5, 'mon': 453.5, 'tue': 571.5, 'wed': 691.5, 'thu': 808.5, 'sat': 1046.0, 'fri': 928.5}
+2026-03-11 14:43:13,209 INFO NTT OCR result: {'sun': 0.0, 'mon': 0.0, 'tue': 0.0, 'wed': 0.0, 'thu': 0.0, 'fri': 0.0, 'sat': 0.0, '_found_days': 6, 'has_draft': False, 'week_start': '2026-03-08'}
+2026-03-11 14:43:13,214 INFO NTT OCR parsed result: {'sun': 0.0, 'mon': 0.0, 'tue': 0.0, 'wed': 0.0, 'thu': 0.0, 'fri': 0.0, 'sat': 0.0, '_found_days': 6, 'has_draft': False, 'week_start': '2026-03-08'}
+2026-03-11 14:43:13,215 INFO NTT OCR upsert: upload_id=165 ws=2026-03-08 mon=0.0 tue=0.0 wed=0.0 thu=0.0 fri=0.0 sat=0.0 sun=0.0
+2026-03-11 14:43:13,273 INFO NTT OCR autofill ok upload_id=165 week_start=2026-03-08 found_days=6
+2026-03-11 14:43:58,208 INFO ===== UPLOAD RECEIVED: module=NTT upload_id=166 path=uploads\NTT_admin_20260311_144358_20260311144358.png =====
+2026-03-11 14:43:58,211 INFO NTT OCR starting for upload_id=166 path=uploads\NTT_admin_20260311_144358_20260311144358.png
+2026-03-11 14:44:00,804 INFO NTT OCR: col_x={'recorded': 937.5, 'assignment': 1066.5, 'entered': 1973.5, 'status': 2246.0}, using entered_x=1973.5
+2026-03-11 14:44:00,806 INFO NTT OCR: day_header_ys = {'mon': 433.5, 'tue': 538.0, 'wed': 647.0, 'thu': 748.5, 'fri': 844.5, 'sun': 333.5, 'sat': 958.5}
+2026-03-11 14:44:00,814 INFO NTT OCR result: {'sun': 0.0, 'mon': 9.0, 'tue': 9.0, 'wed': 0.0, 'thu': 9.0, 'fri': 9.0, 'sat': 0.0, '_found_days': 6, 'has_draft': False, 'week_start': '2026-01-11'}
+2026-03-11 14:44:00,818 INFO NTT OCR parsed result: {'sun': 0.0, 'mon': 9.0, 'tue': 9.0, 'wed': 0.0, 'thu': 9.0, 'fri': 9.0, 'sat': 0.0, '_found_days': 6, 'has_draft': False, 'week_start': '2026-01-11'}
+2026-03-11 14:44:00,818 INFO NTT OCR upsert: upload_id=166 ws=2026-01-11 mon=9.0 tue=9.0 wed=0.0 thu=9.0 fri=9.0 sat=0.0 sun=0.0
+2026-03-11 14:44:00,868 INFO NTT OCR autofill ok upload_id=166 week_start=2026-01-11 found_days=6
+2026-03-11 14:47:00,779 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=167 path=uploads\NTT_REPORT_admin_20260311_144700_20260311144700.png =====
+2026-03-11 14:48:41,417 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=168 path=uploads\NTT_REPORT_admin_20260311_144841_20260311144841.png =====
+2026-03-11 15:02:36,796 INFO Server stopped by user
+2026-03-11 18:36:28,815 INFO Starting server...
+2026-03-11 18:36:28,815 INFO URL: http://127.0.0.1:8000
+2026-03-11 18:57:52,944 INFO Server stopped by user
+2026-03-11 18:58:10,440 INFO Starting server...
+2026-03-11 18:58:10,441 INFO URL: http://127.0.0.1:8000
+2026-03-11 18:58:24,412 ERROR Unhandled exception in do_GET
+Traceback (most recent call last):
+  File "D:\Development\python_project\Timesheet-Tracker\test.py", line 7126, in do_GET
+    r_capture_ui = build_ntt_report_capture_ui("NTT_REPORT")
+  File "D:\Development\python_project\Timesheet-Tracker\test.py", line 4801, in build_ntt_report_capture_ui
+    video: { cursor: "always" },
+    ^^^^^
+NameError: name 'video' is not defined. Did you mean: 'Side'?
+2026-03-11 19:01:09,387 INFO Server stopped by user
+2026-03-11 19:01:20,376 INFO Starting server...
+2026-03-11 19:01:20,377 INFO URL: http://127.0.0.1:8000
+2026-03-11 19:06:32,791 INFO Server stopped by user
+2026-03-11 19:06:48,999 INFO Starting server...
+2026-03-11 19:06:48,999 INFO URL: http://127.0.0.1:8000
+2026-03-11 19:07:39,653 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=169 path=uploads\NTT_REPORT_admin_20260311_190739_20260311190739.png =====
+2026-03-11 19:11:13,362 INFO Server stopped by user
+2026-03-11 19:11:27,915 INFO Starting server...
+2026-03-11 19:11:27,916 INFO URL: http://127.0.0.1:8000
+2026-03-11 19:14:21,906 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=170 path=uploads\NTT_REPORT_admin_20260311_191421_20260311191421.png =====
+2026-03-11 19:24:57,893 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=171 path=uploads\NTT_REPORT_admin_20260311_192457_20260311192457.png =====
+2026-03-11 19:26:54,968 INFO Starting server...
+2026-03-11 19:26:54,969 INFO URL: http://127.0.0.1:8000
+2026-03-11 19:40:01,761 INFO Server stopped by user
+2026-03-11 19:40:24,740 INFO Starting server...
+2026-03-11 19:40:24,740 INFO URL: http://127.0.0.1:8000
+2026-03-11 19:41:01,064 ERROR Unhandled exception in do_POST
+Traceback (most recent call last):
+  File "D:\Development\python_project\Timesheet-Tracker\test.py", line 7494, in do_POST
+    m = re.search(r'boundary=(?P<b>[^;]+)', ctype)
+        ^^
+UnboundLocalError: cannot access local variable 're' where it is not associated with a value
+2026-03-11 19:43:29,245 ERROR Unhandled exception in do_POST
+Traceback (most recent call last):
+  File "D:\Development\python_project\Timesheet-Tracker\test.py", line 7494, in do_POST
+    m = re.search(r'boundary=(?P<b>[^;]+)', ctype)
+        ^^
+UnboundLocalError: cannot access local variable 're' where it is not associated with a value
+2026-03-11 19:43:37,864 INFO Server stopped by user
+2026-03-11 19:43:41,114 ERROR Unhandled exception in do_POST
+Traceback (most recent call last):
+  File "D:\Development\python_project\Timesheet-Tracker\test.py", line 7494, in do_POST
+    m = re.search(r'boundary=(?P<b>[^;]+)', ctype)
+        ^^
+UnboundLocalError: cannot access local variable 're' where it is not associated with a value
+2026-03-11 19:43:43,891 ERROR Unhandled exception in do_POST
+Traceback (most recent call last):
+  File "D:\Development\python_project\Timesheet-Tracker\test.py", line 7494, in do_POST
+    m = re.search(r'boundary=(?P<b>[^;]+)', ctype)
+        ^^
+UnboundLocalError: cannot access local variable 're' where it is not associated with a value
+2026-03-11 19:43:50,618 INFO Starting server...
+2026-03-11 19:43:50,618 INFO URL: http://127.0.0.1:8000
+2026-03-11 19:44:31,979 ERROR Unhandled exception in do_POST
+Traceback (most recent call last):
+  File "D:\Development\python_project\Timesheet-Tracker\test.py", line 7494, in do_POST
+    m = re.search(r'boundary=(?P<b>[^;]+)', ctype)
+        ^^
+UnboundLocalError: cannot access local variable 're' where it is not associated with a value
+2026-03-11 19:44:47,255 ERROR Unhandled exception in do_POST
+Traceback (most recent call last):
+  File "D:\Development\python_project\Timesheet-Tracker\test.py", line 7494, in do_POST
+    m = re.search(r'boundary=(?P<b>[^;]+)', ctype)
+        ^^
+UnboundLocalError: cannot access local variable 're' where it is not associated with a value
+2026-03-11 19:49:52,328 INFO Starting server...
+2026-03-11 19:49:52,328 INFO URL: http://127.0.0.1:8000
+2026-03-11 19:50:30,824 ERROR Unhandled exception in do_POST
+Traceback (most recent call last):
+  File "D:\Development\python_project\Timesheet-Tracker\test.py", line 7494, in do_POST
+    m = re.search(r'boundary=(?P<b>[^;]+)', ctype)
+        ^^
+UnboundLocalError: cannot access local variable 're' where it is not associated with a value
+2026-03-11 19:50:43,383 ERROR Unhandled exception in do_POST
+Traceback (most recent call last):
+  File "D:\Development\python_project\Timesheet-Tracker\test.py", line 7494, in do_POST
+    m = re.search(r'boundary=(?P<b>[^;]+)', ctype)
+        ^^
+UnboundLocalError: cannot access local variable 're' where it is not associated with a value
+2026-03-11 19:50:47,654 ERROR Unhandled exception in do_POST
+Traceback (most recent call last):
+  File "D:\Development\python_project\Timesheet-Tracker\test.py", line 7494, in do_POST
+    m = re.search(r'boundary=(?P<b>[^;]+)', ctype)
+        ^^
+UnboundLocalError: cannot access local variable 're' where it is not associated with a value
+2026-03-11 19:50:51,954 INFO Server stopped by user
+2026-03-11 19:50:58,695 ERROR Unhandled exception in do_POST
+Traceback (most recent call last):
+  File "D:\Development\python_project\Timesheet-Tracker\test.py", line 7494, in do_POST
+    m = re.search(r'boundary=(?P<b>[^;]+)', ctype)
+        ^^
+UnboundLocalError: cannot access local variable 're' where it is not associated with a value
+2026-03-11 19:51:11,085 INFO Starting server...
+2026-03-11 19:51:11,086 INFO URL: http://127.0.0.1:8000
+2026-03-11 19:51:45,251 ERROR Unhandled exception in do_POST
+Traceback (most recent call last):
+  File "D:\Development\python_project\Timesheet-Tracker\test.py", line 7494, in do_POST
+    m = re.search(r'boundary=(?P<b>[^;]+)', ctype)
+        ^^
+UnboundLocalError: cannot access local variable 're' where it is not associated with a value
+2026-03-11 19:52:05,378 INFO Server stopped by user
+2026-03-11 19:52:12,150 INFO Starting server...
+2026-03-11 19:52:12,151 INFO URL: http://127.0.0.1:8000
+2026-03-11 19:52:36,681 ERROR Unhandled exception in do_POST
+Traceback (most recent call last):
+  File "D:\Development\python_project\Timesheet-Tracker\test.py", line 7494, in do_POST
+    m = re.search(r'boundary=(?P<b>[^;]+)', ctype)
+        ^^
+UnboundLocalError: cannot access local variable 're' where it is not associated with a value
+2026-03-11 19:55:06,648 INFO Server stopped by user
+2026-03-11 19:55:14,123 INFO Starting server...
+2026-03-11 19:55:14,124 INFO URL: http://127.0.0.1:8000
+2026-03-11 19:55:49,248 ERROR Unhandled exception in do_POST
+Traceback (most recent call last):
+  File "D:\Development\python_project\Timesheet-Tracker\test.py", line 7494, in do_POST
+    m = re.search(r'boundary=(?P<b>[^;]+)', ctype)
+        ^^
+UnboundLocalError: cannot access local variable 're' where it is not associated with a value
+2026-03-11 20:02:17,423 INFO Starting server...
+2026-03-11 20:02:17,424 INFO URL: http://127.0.0.1:8000
+2026-03-11 20:04:19,315 INFO Server stopped by user
+2026-03-11 20:04:43,941 INFO Starting server...
+2026-03-11 20:04:43,941 INFO URL: http://127.0.0.1:8000
+2026-03-11 20:06:51,303 ERROR Unhandled exception in do_POST
+Traceback (most recent call last):
+  File "D:\Development\python_project\Timesheet-Tracker\test.py", line 7494, in do_POST
+    if not m:
+        ^^
+UnboundLocalError: cannot access local variable 're' where it is not associated with a value
+2026-03-11 20:06:51,505 ERROR Unhandled exception in do_POST
+Traceback (most recent call last):
+  File "D:\Development\python_project\Timesheet-Tracker\test.py", line 7494, in do_POST
+    if not m:
+        ^^
+UnboundLocalError: cannot access local variable 're' where it is not associated with a value
+2026-03-11 20:07:27,952 ERROR Unhandled exception in do_POST
+Traceback (most recent call last):
+  File "D:\Development\python_project\Timesheet-Tracker\test.py", line 7494, in do_POST
+    if not m:
+        ^^
+UnboundLocalError: cannot access local variable 're' where it is not associated with a value
+2026-03-11 20:36:59,497 INFO Starting server...
+2026-03-11 20:36:59,497 INFO URL: http://127.0.0.1:8000
+2026-03-11 20:55:03,087 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=172 path=uploads\NTT_REPORT_admin_20260311_205502_20260311205502.pdf =====
+2026-03-11 20:55:25,683 ERROR Failed to remove uploaded file from disk: uploads\NTT_REPORT_admin_20260311_205502_20260311205502.pdf
+Traceback (most recent call last):
+  File "D:\Development\python_project\Timesheet-Tracker\test.py", line 2132, in delete_upload
+    os.remove(path)
+    ~~~~~~~~~^^^^^^
+PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'uploads\\NTT_REPORT_admin_20260311_205502_20260311205502.pdf'
+2026-03-11 20:55:42,096 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=173 path=uploads\NTT_REPORT_admin_20260311_205542_20260311205542.pdf =====
+2026-03-11 21:04:20,726 INFO Starting server...
+2026-03-11 21:04:20,726 INFO URL: http://127.0.0.1:8000
+2026-03-11 21:05:21,719 INFO Starting server...
+2026-03-11 21:05:21,721 INFO URL: http://127.0.0.1:8000
+2026-03-11 21:07:09,543 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=174 path=uploads\NTT_REPORT_admin_20260311_210709_20260311210709.pdf =====
+2026-03-11 21:15:50,350 INFO Starting server...
+2026-03-11 21:15:50,350 INFO URL: http://127.0.0.1:8000
+2026-03-11 21:17:28,650 INFO Starting server...
+2026-03-11 21:17:28,651 INFO URL: http://127.0.0.1:8000
+2026-03-11 21:20:34,672 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=175 path=uploads\NTT_REPORT_admin_20260311_212034_20260311212034.pdf =====
+2026-03-11 21:20:35,906 INFO PDF text empty, trying OCR on first page
+2026-03-11 21:20:43,033 INFO NTT_REPORT extraction result: 0.0
+2026-03-11 21:21:57,530 ERROR Failed to remove uploaded file from disk: uploads\NTT_REPORT_admin_20260311_212034_20260311212034.pdf
+Traceback (most recent call last):
+  File "D:\Development\python_project\Timesheet-Tracker\test.py", line 2132, in delete_upload
+    os.remove(path)
+    ~~~~~~~~~^^^^^^
+PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'uploads\\NTT_REPORT_admin_20260311_212034_20260311212034.pdf'
+2026-03-11 21:22:04,578 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=176 path=uploads\NTT_REPORT_admin_20260311_212204_20260311212204.pdf =====
+2026-03-11 21:22:04,813 INFO PDF text empty, trying OCR on first page
+2026-03-11 21:22:07,347 INFO NTT_REPORT extraction result: 0.0
+2026-03-11 21:26:35,554 INFO Starting server...
+2026-03-11 21:26:35,554 INFO URL: http://127.0.0.1:8000
+2026-03-11 21:27:55,969 INFO Starting server...
+2026-03-11 21:27:55,969 INFO URL: http://127.0.0.1:8000
+2026-03-11 21:31:44,556 INFO Server stopped by user
+2026-03-11 21:31:49,209 INFO Starting server...
+2026-03-11 21:31:49,210 INFO URL: http://127.0.0.1:8000
+2026-03-11 21:32:19,561 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=177 path=uploads\NTT_REPORT_admin_20260311_213219_20260311213219.pdf =====
+2026-03-11 21:32:20,194 INFO PDF text empty, trying OCR with preprocessing
+2026-03-11 21:32:22,673 INFO NTT_REPORT extracted text length: 1225
+2026-03-11 21:32:22,683 INFO NTT_REPORT final extracted_total: 0.0
+2026-03-11 21:44:18,356 INFO Starting server...
+2026-03-11 21:44:18,356 INFO URL: http://127.0.0.1:8000
+2026-03-11 22:52:34,378 INFO Starting server...
+2026-03-11 22:52:34,378 INFO URL: http://127.0.0.1:8000
+2026-03-11 22:54:57,010 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=178 path=uploads\NTT_REPORT_admin_20260311_225456_20260311225456.pdf =====
+2026-03-11 22:54:58,585 INFO PDF text empty, trying OCR with preprocessing
+2026-03-11 22:55:04,039 INFO NTT_REPORT extracted text length: 1225
+2026-03-11 22:55:04,056 INFO NTT_REPORT snippet: Timesheet:02/01/2026-02/28/2026  Company Code : 1001 Purchase Document No: 4600056876  Company Name: = NTT DATA Americas, Inc. Position No tosqean for Pers. ©) NTT DaTa Name of Employee : Sindhu Sundaramoorthy  Employee ID - 10402564 Cost Centre QAT HP PROV LS  Print Date > 11-Mar-26  Client Name : Thermo Fisher Scientific Inc Contract Description :DL1CIND-SOW 25-0653-Siddharth-Sindhu  WBS Text  B
+2026-03-11 22:55:04,058 INFO NTT_REPORT final extracted_total: 0.0
+2026-03-11 22:55:53,862 ERROR Failed to remove uploaded file from disk: uploads\NTT_REPORT_admin_20260311_225456_20260311225456.pdf
+Traceback (most recent call last):
+  File "D:\Development\python_project\Timesheet-Tracker\test.py", line 2132, in delete_upload
+    os.remove(path)
+    ~~~~~~~~~^^^^^^
+PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'uploads\\NTT_REPORT_admin_20260311_225456_20260311225456.pdf'
+2026-03-11 23:03:58,575 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=179 path=uploads\NTT_REPORT_admin_20260311_230358_20260311230358.pdf =====
+2026-03-11 23:03:59,430 ERROR NTT_REPORT extraction failed.
+Traceback (most recent call last):
+  File "D:\Development\python_project\Timesheet-Tracker\test.py", line 7906, in do_POST
+    pdf = pdfium.PdfDocument(save_path)
+  File "C:\Users\sindhu.sundara\AppData\Roaming\Python\Python314\site-packages\pypdfium2\_helpers\document.py", line 73, in __init__
+    self.raw, to_hold, to_close = _open_pdf(self._input, self._password, self._autoclose)
+                                  ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sindhu.sundara\AppData\Roaming\Python\Python314\site-packages\pypdfium2\_helpers\document.py", line 549, in _open_pdf
+    raise PdfiumError(f"Failed to load document (PDFium: {pdfium_i.ErrorToStr.get(err_code)}).", err_code=err_code)
+pypdfium2._helpers.misc.PdfiumError: Failed to load document (PDFium: Data format error).
+2026-03-11 23:04:03,174 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=180 path=uploads\NTT_REPORT_admin_20260311_230403_20260311230403.pdf =====
+2026-03-11 23:04:03,459 INFO PDF text empty, trying OCR with preprocessing
+2026-03-11 23:04:07,629 INFO NTT_REPORT extracted text length: 1225
+2026-03-11 23:04:07,630 INFO NTT_REPORT snippet: Timesheet:02/01/2026-02/28/2026  Company Code : 1001 Purchase Document No: 4600056876  Company Name: = NTT DATA Americas, Inc. Position No tosqean for Pers. ©) NTT DaTa Name of Employee : Sindhu Sundaramoorthy  Employee ID - 10402564 Cost Centre QAT HP PROV LS  Print Date > 11-Mar-26  Client Name : Thermo Fisher Scientific Inc Contract Description :DL1CIND-SOW 25-0653-Siddharth-Sindhu  WBS Text  B
+2026-03-11 23:04:07,634 INFO NTT_REPORT final extracted_total: 0.0
+2026-03-11 23:04:19,125 ERROR Failed to remove uploaded file from disk: uploads\NTT_REPORT_admin_20260311_230403_20260311230403.pdf
+Traceback (most recent call last):
+  File "D:\Development\python_project\Timesheet-Tracker\test.py", line 2132, in delete_upload
+    os.remove(path)
+    ~~~~~~~~~^^^^^^
+PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'uploads\\NTT_REPORT_admin_20260311_230403_20260311230403.pdf'
+2026-03-11 23:04:32,826 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=181 path=uploads\NTT_REPORT_admin_20260311_230432_20260311230432.pdf =====
+2026-03-11 23:04:33,052 INFO PDF text empty, trying OCR with preprocessing
+2026-03-11 23:04:35,686 INFO NTT_REPORT extracted text length: 1225
+2026-03-11 23:04:35,687 INFO NTT_REPORT snippet: Timesheet:02/01/2026-02/28/2026  Company Code : 1001 Purchase Document No: 4600056876  Company Name: = NTT DATA Americas, Inc. Position No tosqean for Pers. ©) NTT DaTa Name of Employee : Sindhu Sundaramoorthy  Employee ID - 10402564 Cost Centre QAT HP PROV LS  Print Date > 11-Mar-26  Client Name : Thermo Fisher Scientific Inc Contract Description :DL1CIND-SOW 25-0653-Siddharth-Sindhu  WBS Text  B
+2026-03-11 23:04:35,689 INFO NTT_REPORT final extracted_total: 0.0
+2026-03-11 23:10:31,748 INFO Starting server...
+2026-03-11 23:10:31,749 INFO URL: http://127.0.0.1:8000
+2026-03-11 23:11:40,164 INFO Starting server...
+2026-03-11 23:11:40,165 INFO URL: http://127.0.0.1:8000
+2026-03-11 23:13:40,875 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=182 path=uploads\NTT_REPORT_admin_20260311_231340_20260311231340.pdf =====
+2026-03-11 23:13:42,377 INFO PDF text total not found, trying multi-page OCR
+2026-03-11 23:13:53,361 INFO NTT_REPORT final extracted_total: 0.0
+2026-03-11 23:13:53,382 INFO NTT_REPORT Text Sample:     --- PAGE 1 OCR --- Timesheet:02/01/2026-02/28/2026  Company Code : 1001 Purchase Document No: 4600056876  Company Name: _-NTT DATA Americas, Inc. Position . Position generated for Pers. ©) NTT DaTa  No. 10402564 Name of Employee : Sindhu Sundaramoorthy  Employee ID : 10402564 Cost Centre : QAT HP PROVLS Print Date - 11-Mar-26 Client Name : Thermo Fisher Scientific Inc Contract Description :DL1ICIND-SOW 25-0653-Siddharth-Sindhu  | oxte | _wasnumier | _wastoxt __[amabe ype) te [eiibie” | status | "Baty | ato | Approved By WBS Number WBS Text Att\Abs Type Billable Date Date Approved By iron feeromseie aes [om | 000 [oun lions twas [ores [Emer irom fpeoeremamren|geme segs femur [ow jawwe  [aoves [ore [wnmw [Emu pero peomreoern|Ce SAL O lrw | 96 jaune amows [ori [roa [Rete psrom _fpeeeromar
+2026-03-11 23:22:31,067 INFO Starting server...
+2026-03-11 23:22:31,078 INFO URL: http://127.0.0.1:8000
+2026-03-11 23:26:53,555 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=183 path=uploads\NTT_REPORT_admin_20260311_232653_20260311232653.pdf =====
+2026-03-11 23:26:54,981 INFO PDF text total not found, trying multi-page OCR
+2026-03-11 23:27:05,417 INFO NTT_REPORT final extracted_total: 0.0
+2026-03-11 23:27:05,433 INFO NTT_REPORT Text Sample:     --- PAGE 1 OCR --- Timesheet:02/01/2026-02/28/2026  Company Code : 1001 Purchase Document No: 4600056876  Company Name: _-NTT DATA Americas, Inc. Position . Position generated for Pers. ©) NTT DaTa  No. 10402564 Name of Employee : Sindhu Sundaramoorthy  Employee ID : 10402564 Cost Centre : QAT HP PROVLS Print Date - 11-Mar-26 Client Name : Thermo Fisher Scientific Inc Contract Description :DL1ICIND-SOW 25-0653-Siddharth-Sindhu  | oxte | _wasnumier | _wastoxt __[amabe ype) te [eiibie” | status | "Baty | ato | Approved By WBS Number WBS Text Att\Abs Type Billable Date Date Approved By iron feeromseie aes [om | 000 [oun lions twas [ores [Emer irom fpeoeremamren|geme segs femur [ow jawwe  [aoves [ore [wnmw [Emu pero peomreoern|Ce SAL O lrw | 96 jaune amows [ori [roa [Rete psrom _fpeeeromar
+2026-03-11 23:27:21,037 ERROR Failed to remove uploaded file from disk: uploads\NTT_REPORT_admin_20260311_232653_20260311232653.pdf
+Traceback (most recent call last):
+  File "D:\Development\python_project\Timesheet-Tracker\test.py", line 2132, in delete_upload
+    os.remove(path)
+    ~~~~~~~~~^^^^^^
+PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'uploads\\NTT_REPORT_admin_20260311_232653_20260311232653.pdf'
+2026-03-11 23:27:45,557 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=184 path=uploads\NTT_REPORT_admin_20260311_232745_20260311232745.pdf =====
+2026-03-11 23:27:45,794 INFO PDF text total not found, trying multi-page OCR
+2026-03-11 23:27:54,240 INFO NTT_REPORT final extracted_total: 0.0
+2026-03-11 23:27:54,240 INFO NTT_REPORT Text Sample:     --- PAGE 1 OCR --- Timesheet:02/01/2026-02/28/2026  Company Code : 1001 Purchase Document No: 4600056876  Company Name: _-NTT DATA Americas, Inc. Position . Position generated for Pers. ©) NTT DaTa  No. 10402564 Name of Employee : Sindhu Sundaramoorthy  Employee ID : 10402564 Cost Centre : QAT HP PROVLS Print Date - 11-Mar-26 Client Name : Thermo Fisher Scientific Inc Contract Description :DL1ICIND-SOW 25-0653-Siddharth-Sindhu  | oxte | _wasnumier | _wastoxt __[amabe ype) te [eiibie” | status | "Baty | ato | Approved By WBS Number WBS Text Att\Abs Type Billable Date Date Approved By iron feeromseie aes [om | 000 [oun lions twas [ores [Emer irom fpeoeremamren|geme segs femur [ow jawwe  [aoves [ore [wnmw [Emu pero peomreoern|Ce SAL O lrw | 96 jaune amows [ori [roa [Rete psrom _fpeeeromar
+2026-03-11 23:36:39,115 INFO Starting server...
+2026-03-11 23:36:39,116 INFO URL: http://127.0.0.1:8000
+2026-03-11 23:38:21,176 INFO Starting server...
+2026-03-11 23:38:21,176 INFO URL: http://127.0.0.1:8000
+2026-03-11 23:40:22,443 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=185 path=uploads\NTT_REPORT_admin_20260311_234022_20260311234022.pdf =====
+2026-03-11 23:40:23,421 ERROR NTT_REPORT extraction critical failure.
+Traceback (most recent call last):
+  File "D:\Development\python_project\Timesheet-Tracker\test.py", line 7972, in do_POST
+    pdf = pdfium.PdfDocument(save_path)
+  File "C:\Users\sindhu.sundara\AppData\Roaming\Python\Python314\site-packages\pypdfium2\_helpers\document.py", line 73, in __init__
+    self.raw, to_hold, to_close = _open_pdf(self._input, self._password, self._autoclose)
+                                  ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sindhu.sundara\AppData\Roaming\Python\Python314\site-packages\pypdfium2\_helpers\document.py", line 549, in _open_pdf
+    raise PdfiumError(f"Failed to load document (PDFium: {pdfium_i.ErrorToStr.get(err_code)}).", err_code=err_code)
+pypdfium2._helpers.misc.PdfiumError: Failed to load document (PDFium: Data format error).
+2026-03-11 23:41:44,404 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=186 path=uploads\NTT_REPORT_admin_20260311_234144_20260311234144.pdf =====
+2026-03-11 23:41:44,726 INFO PDF selectable text failed, trying 4x scale OCR
+2026-03-11 23:41:58,740 INFO NTT_REPORT final result: 202.0
+2026-03-11 23:42:05,831 INFO Server stopped by user
+2026-03-11 23:42:19,315 INFO Starting server...
+2026-03-11 23:42:19,316 INFO URL: http://127.0.0.1:8000
+2026-03-11 23:43:44,138 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=187 path=uploads\NTT_REPORT_admin_20260311_234344_20260311234344.pdf =====
+2026-03-11 23:43:44,435 INFO PDF selectable text failed, trying 4x scale OCR
+2026-03-11 23:43:54,484 INFO NTT_REPORT final result: 202.0
+2026-03-11 23:43:54,744 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=188 path=uploads\NTT_REPORT_admin_20260311_234354_20260311234354.pdf =====
+2026-03-11 23:43:55,012 INFO PDF selectable text failed, trying 4x scale OCR
+2026-03-11 23:44:03,180 INFO NTT_REPORT final result: 202.0
+2026-03-11 23:49:05,296 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=189 path=uploads\NTT_REPORT_admin_20260311_234905_20260311234905.pdf =====
+2026-03-11 23:49:05,748 INFO PDF selectable text failed, trying 4x scale OCR
+2026-03-11 23:49:15,179 INFO NTT_REPORT final result: 202.0
+2026-03-11 23:53:22,104 INFO Starting server...
+2026-03-11 23:53:22,105 INFO URL: http://127.0.0.1:8000
+2026-03-11 23:55:54,602 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=190 path=uploads\NTT_REPORT_admin_20260311_235554_20260311235554.pdf =====
+2026-03-11 23:55:57,708 INFO PDF text failed, trying high-res OCR
+2026-03-12 09:39:31,838 INFO NTT_REPORT extraction result: 0.0
+2026-03-12 09:39:31,994 ERROR Unhandled exception in do_POST
+Traceback (most recent call last):
+  File "D:\Development\python_project\Timesheet-Tracker\test.py", line 8016, in do_POST
+    self.end_headers()
+    ~~~~~~~~~~~~~~~~^^
+  File "C:\Python314\Lib\http\server.py", line 598, in end_headers
+    self.flush_headers()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Python314\Lib\http\server.py", line 602, in flush_headers
+    self.wfile.write(b"".join(self._headers_buffer))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\socketserver.py", line 845, in write
+    self._sock.sendall(b)
+    ~~~~~~~~~~~~~~~~~~^^^
+ConnectionAbortedError: [WinError 10053] An established connection was aborted by the software in your host machine
+2026-03-12 09:52:33,442 INFO Starting server...
+2026-03-12 09:52:33,442 INFO URL: http://127.0.0.1:8000
+2026-03-12 09:56:14,635 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=191 path=uploads\NTT_REPORT_admin_20260312_095614_20260312095614.pdf =====
+2026-03-12 09:56:14,859 INFO PDF text failed, trying high-res OCR
+2026-03-12 09:56:21,215 INFO NTT_REPORT extraction result: 0.0
+2026-03-12 09:56:52,505 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=192 path=uploads\NTT_REPORT_admin_20260312_095652_20260312095652.pdf =====
+2026-03-12 09:56:52,596 INFO PDF text failed, trying high-res OCR
+2026-03-12 09:56:58,344 INFO NTT_REPORT extraction result: 0.0
+2026-03-12 10:09:50,145 INFO Starting server...
+2026-03-12 10:09:50,145 INFO URL: http://127.0.0.1:8000
+2026-03-12 10:23:15,390 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=193 path=uploads\NTT_REPORT_admin_20260312_102315_20260312102315.pdf =====
+2026-03-12 10:23:16,031 INFO PDF text empty/missing total, trying high-res OCR in reverse
+2026-03-12 10:23:21,702 INFO NTT_REPORT extraction result: 0.0
+2026-03-12 10:26:19,342 INFO Starting server...
+2026-03-12 10:26:19,343 INFO URL: http://127.0.0.1:8000
+2026-03-12 10:28:58,033 INFO Starting server...
+2026-03-12 10:28:58,034 INFO URL: http://127.0.0.1:8000
+2026-03-12 10:31:18,567 INFO Server stopped by user
+2026-03-12 10:31:24,004 INFO Starting server...
+2026-03-12 10:31:24,005 INFO URL: http://127.0.0.1:8000
+2026-03-12 10:32:01,008 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=194 path=uploads\NTT_REPORT_admin_20260312_103200_20260312103200.pdf =====
+2026-03-12 10:32:01,406 INFO NTT_REPORT: Last Page Text Length: 0
+2026-03-12 10:32:01,418 INFO NTT_REPORT: Last Page Snippet: 
+2026-03-12 10:32:01,549 INFO Trying OCR fallback in reverse order...
+2026-03-12 10:32:06,179 INFO NTT_REPORT extraction final result: 0.0
+2026-03-12 10:39:19,096 INFO Starting server...
+2026-03-12 10:39:19,096 INFO URL: http://127.0.0.1:8000
+2026-03-12 10:44:40,093 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=195 path=uploads\NTT_REPORT_admin_20260312_104440_20260312104440.pdf =====
+2026-03-12 11:00:55,682 INFO Starting server...
+2026-03-12 11:00:55,682 INFO URL: http://127.0.0.1:8000
+2026-03-12 11:07:18,046 INFO Starting server...
+2026-03-12 11:07:18,047 INFO URL: http://127.0.0.1:8000
+2026-03-12 11:11:10,010 INFO Server stopped by user
+2026-03-12 11:11:32,376 INFO Starting server...
+2026-03-12 11:11:32,376 INFO URL: http://127.0.0.1:8000
+2026-03-12 11:12:04,963 INFO ===== UPLOAD RECEIVED: module=NTT_REPORT upload_id=196 path=uploads\NTT_REPORT_admin_20260312_111204_20260312111204.pdf =====
+2026-03-12 11:19:22,932 INFO Starting server...
+2026-03-12 11:19:22,933 INFO URL: http://127.0.0.1:8000
+2026-03-12 11:20:25,668 INFO Starting server...
+2026-03-12 11:20:25,669 INFO URL: http://127.0.0.1:8000
+2026-03-12 11:53:28,461 INFO Server stopped by user

@@ -140,6 +140,76 @@ def format_dt_ist(dt_str: str) -> str:
     dt_ist = dt.astimezone(IST)
     return dt_ist.strftime('%Y-%m-%d %H:%M:%S IST')
 
+
+def is_last_friday_of_month(d: datetime.date) -> bool:
+    """True if d is the last Friday of its month."""
+    if d.weekday() != 4:  # Monday=0, Friday=4
+        return False
+    # Next Friday in the same month?
+    return (d + datetime.timedelta(days=7)).month != d.month
+
+
+def get_monthly_total_hours(email: str, month_str: str) -> float:
+    """Sum up all NTT hours for a user in a given month (YYYY-MM)."""
+    first_day, last_day = _month_start_end(month_str)
+    if not first_day:
+        return 0.0
+
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT t.week_start, t.sun, t.mon, t.tue, t.wed, t.thu, t.fri, t.sat
+        FROM timesheets t
+        JOIN uploads u ON t.upload_id = u.id
+        WHERE LOWER(COALESCE(u.uploaded_by, '')) = LOWER(?) AND COALESCE(u.module, '') = 'NTT'
+    """, (email,))
+    rows = cur.fetchall()
+    conn.close()
+
+    total = 0.0
+    for ws_iso, sun, mon, tue, wed, thu, fri, sat in rows:
+        try:
+            ws = datetime.date.fromisoformat(ws_iso)
+        except Exception:
+            continue
+
+        days_hours = [sun, mon, tue, wed, thu, fri, sat]
+        for i in range(7):
+            d_ = ws + datetime.timedelta(days=i)
+            if first_day <= d_ <= last_day:
+                total += float(days_hours[i] or 0)
+
+    return round(total, 2)
+
+
+def has_monthly_report_uploaded(email: str, month_str: str) -> bool:
+    """True if user has uploaded NTT_REPORT for this month (YYYY-MM)."""
+    conn = get_conn()
+    cur = conn.cursor()
+    # Month pattern: %Y-%m-%d ... so LIKE '2026-03%' matches.
+    cur.execute("SELECT 1 FROM uploads WHERE LOWER(COALESCE(uploaded_by, '')) = LOWER(?) AND module='NTT_REPORT' AND uploaded_at LIKE ?", (email, f"{month_str}%"))
+    row = cur.fetchone()
+    conn.close()
+    return row is not None
+
+
+def is_valid_password_strength(password: str) -> bool:
+    """Check if password contains alphanumeric characters and exactly one special character."""
+    if not password:
+        return False
+    # Regex for "exactly one special character (anything not alnum) and the rest alphanumeric"
+    # Special char can be anywhere.
+    # Count special characters
+    special_chars = [c for c in password if not c.isalnum()]
+    # Requirement: "only alphanumeric with one special character"
+    # This implies no other chars allowed, and exactly one special char.
+    if len(special_chars) != 1:
+        return False
+    # Must have at least one alphanumeric char
+    if not any(c.isalnum() for c in password):
+        return False
+    return True
+
 import http.cookies
 import uuid
 import re
@@ -1328,7 +1398,6 @@ def _to_hour_value(token: str):
     # Remove all spaces and pick out numeric parts
     s = s.replace(' ', '').replace(',', '.')
     # Extract just the first numeric part (digits and dots)
-    import re
     nums = re.findall(r'[0-9.]+', s)
     if not nums:
         return None
@@ -1589,11 +1658,11 @@ def extract_ntt_hours_from_screenshot_entered_column(image_path: str):
     entered_y = 150.0 # fallback
     for w in words:
         tl = w['tl'].rstrip('.,:;')
-        if tl in ('entered', 'entrd', 'enlered', 'enfered', 'entored', 'enterod'):
+        if tl in ('entered', 'entrd', 'enlered', 'enfered', 'entored', 'enterod', 'enferod'):
             if w['cy'] > 100: # avoid top-of-page buttons
                 col_x['entered'] = float(w['cx'])
                 entered_y = float(w['cy'])
-        elif tl in ('recorded', 'target'):
+        elif tl in ('recorded', 'target', 'recorde', 'racorded'):
             if w['cy'] > 100: col_x['recorded'] = float(w['cx'])
         elif tl in ('draft', 'drafl', 'draît'):
             if w['cy'] > 100: col_x['draft'] = float(w['cx'])
@@ -1609,12 +1678,13 @@ def extract_ntt_hours_from_screenshot_entered_column(image_path: str):
     elif 'status' in col_x:
         entered_x = col_x['status'] - 400
     elif 'recorded' in col_x:
-        entered_x = col_x['recorded'] + 850
+        # Distance from Recorded to Entered is usually around 350-400px
+        entered_x = col_x['recorded'] + 380
     elif 'assignment' in col_x:
         entered_x = col_x['assignment'] + 500
     else:
-        # Fallback to 75% of image width
-        entered_x = img.size[0] * 0.75
+        # Fallback to 80% of image width
+        entered_x = img.size[0] * 0.8
 
     if DEBUG:
         logging.info("NTT OCR: col_x=%s, using entered_x=%.1f", col_x, entered_x)
@@ -1699,6 +1769,10 @@ def extract_ntt_hours_from_screenshot_entered_column(image_path: str):
     # A genuine hour token looks like  "9.00"  "0.00"  "8.00!"
     # NOT "Hours", "Monday,", "Submitted", calendar numbers, etc.
     def _parse_entered_value(raw: str):
+        # Must have a digit followed by a separator and another digit
+        # to avoid picking up dates like "9," or "March 9" as "9."
+        if not re.search(r'\d[.,]\d', raw):
+            return None
         # Keep digits and dots
         cleaned = re.sub(r'[^0-9.]+', '', raw.replace(',', '.'))
         if not cleaned: return None
@@ -1741,33 +1815,37 @@ def extract_ntt_hours_from_screenshot_entered_column(image_path: str):
             seen_cells = set() # (int(cx/30), int(cy/10)) -> avoid double counting same cell
             for w in words:
                 wy = float(w['cy'])
+                wx = float(w['cx'])
 
-                # Draft detection
-                if wy >= hdr_y - 10 and wy < next_y:
-                    if w['tl'] in ('draft', 'drafl', 'draît') and w['cx'] > entered_x - 100:
-                        result['has_draft'] = True
+                # Skip anything in the left 60% of the image (dates, headers, calendar)
+                # to avoid picking up numbers from the daily headers (like "March 9").
+                if wx < img.size[0] * 0.6:
+                    # Draft detection (Draft badge usually appears near the Entered column)
+                    if wy >= hdr_y - 10 and wy < next_y:
+                        if w['tl'] in ('draft', 'drafl', 'draît'):
+                            result['has_draft'] = True
+                    continue
 
-                if wy < hdr_y - 10 or wy >= next_y: continue
+                # Start search 35px below header Y to definitively skip the daily header text
+                # (e.g. "Monday, March 09, 2026") which shares a similar Y.
+                if wy < hdr_y + 35 or wy >= next_y: continue
                 
                 v = _parse_entered_value(w['t'])
                 if v is not None:
                     is_entered_col = False
-                    # Check 1: "Hours" anchor (primary indicator)
+                    # Check 1: "Hours" anchor (REQUIRED for high reliability)
                     for anchor in hours_anchors:
-                        if abs(float(anchor['cy']) - wy) < 35:
+                        if abs(float(anchor['cy']) - wy) < 25:
                             dist = float(anchor['cx']) - float(w['cx'])
-                            if 10 < dist < 350:
+                            if 5 < dist < 350:
                                 is_entered_col = True
                                 break
                     
-                    # Check 2: Horizontal alignment (secondary indicator)
+                    # Check 2: Strict Horizontal alignment (Fallback only)
                     if not is_entered_col:
-                        if abs(float(w['cx']) - entered_x) < 200:
-                            # Safety: ensures it's not the Recorded column if we know where it is
-                            if 'recorded' in col_x and float(w['cx']) < col_x['recorded'] + 200:
-                                pass # skip, likely recorded column
-                            else:
-                                is_entered_col = True
+                        # Only fallback if we don't have ANY "Hours" anchors in the whole image
+                        if not hours_anchors and abs(float(w['cx']) - entered_x) < 80:
+                            is_entered_col = True
 
                     if is_entered_col:
                         cell_key = (int(float(w['cx'])/50), int(float(w['cy'])/15))
@@ -3988,10 +4066,31 @@ def build_saved_preview_modal():
   const btnClose= document.getElementById('imgModalClose');
 
   function openModal(url, filename){
-    img.src = url;
+    const isPdf = url.toLowerCase().split('?')[0].endsWith('.pdf');
+    const body = img.parentNode;
+    let embed = document.getElementById('pdfEmbedMode');
+    
+    if(isPdf) {
+      img.style.display = 'none';
+      if(!embed) {
+        embed = document.createElement('embed');
+        embed.id = 'pdfEmbedMode';
+        embed.style.width = '100%';
+        embed.style.height = '75vh';
+        embed.type = 'application/pdf';
+        body.appendChild(embed);
+      }
+      embed.src = url;
+      embed.style.display = 'block';
+    } else {
+      if(embed) embed.style.display = 'none';
+      img.src = url;
+      img.style.display = 'block';
+    }
+
     title.textContent = filename || 'Preview';
     btnDl.href = url;
-    btnDl.setAttribute('download', filename || 'screenprint.png');
+    btnDl.setAttribute('download', filename || (isPdf ? 'report.pdf' : 'screenprint.png'));
     overlay.style.display = 'flex';
     overlay.setAttribute('aria-hidden','false');
   }
@@ -4000,6 +4099,8 @@ def build_saved_preview_modal():
     overlay.style.display = 'none';
     overlay.setAttribute('aria-hidden','true');
     img.src = '';
+    const embed = document.getElementById('pdfEmbedMode');
+    if(embed) embed.src = '';
     btnDl.href = '#';
   }
 
@@ -4029,7 +4130,7 @@ def build_saved_preview_modal():
 # -------------------------
 # Timesheet UI — now accepts admin_delete_html for swapping positions
 # -------------------------
-def build_timesheet_ui(upload_id: int, return_to: str, admin_delete_html: str = ""):
+def build_timesheet_ui(upload_id: int, return_to: str, admin_delete_html: str = "", lock_reason: str = ""):
     ts = get_timesheet_by_upload(upload_id)
     module_for_upload = get_upload_module(upload_id)
     if not ts:
@@ -4152,11 +4253,12 @@ def build_timesheet_ui(upload_id: int, return_to: str, admin_delete_html: str = 
         controls_html = f"""
         {rem_warning}
         {has_draft_error}
+        {f"<div style='margin-top:12px; padding:12px 16px; border-radius:10px; background:#fff1f2; border:1px solid #fecaca; color:#991b1b; display:flex; align-items:center; gap:12px; font-weight:600; font-size:14px; box-shadow:0 1px 3px rgba(0,0,0,0.05);'><i class='fa fa-triangle-exclamation' style='font-size:18px; color:#ef4444;'></i> <span>{html.escape(lock_reason)}</span></div>" if lock_reason else ""}
         {verify_html}
         <div class="controls" style="margin-top:12px;">
           {save_btn_html}
 
-          <button class="btn secondary small ts-submit-btn" type="submit" formaction="/timesheet/submit" {submit_disabled_attr}>
+          <button class="btn secondary small ts-submit-btn" type="submit" formaction="/timesheet/submit" {submit_disabled_attr} {"disabled" if lock_reason else ""}>
             <i class="fa fa-check"></i> Submit
           </button>
         </div>
@@ -4444,42 +4546,40 @@ def build_capture_ui(module_ctx: str):
 
     parts.append(
         "<div style='display:flex;gap:12px;flex-wrap:wrap;align-items:center'>"
-        f"<button type='button' class='btn' id='btnCapture'>{html.escape(capture_label)}</button>"
+        f"<button type='button' class='btn' id='btnCapture_{module_ctx}'>{html.escape(capture_label)}</button>"
         "</div>"
     )
 
-    parts.append("<video id='capPreview' style='display:none' autoplay muted playsinline></video>")
+    parts.append(f"<video id='capPreview_{module_ctx}' style='display:none' autoplay muted playsinline></video>")
 
-    # For PPM & NTT, hide Save and Close buttons entirely (auto-upload handles it)
-    save_btn_style = "display:none" if module_ctx in ("PPM", "NTT", "EMAIL") else ""
-    close_btn_style = "display:none" if module_ctx in ("PPM", "NTT", "EMAIL") else ""
+    # For PPM & NTT & NTT_REPORT, hide Save and Close buttons entirely (auto-upload handles it)
+    save_btn_style = "display:none" if module_ctx in ("PPM", "NTT", "EMAIL", "NTT_REPORT") else ""
+    close_btn_style = "display:none" if module_ctx in ("PPM", "NTT", "EMAIL", "NTT_REPORT") else ""
     parts.append(
-        "<div id='shotContainer' class='preview' style='display:none;margin-top:12px'>"
-        "  <div id='shotBox'></div>"
+        f"<div id='shotContainer_{module_ctx}' class='preview' style='display:none;margin-top:12px'>"
+        f"  <div id='shotBox_{module_ctx}'></div>"
         "  <div class='controls'>"
-        f"    <button type='button' class='btn' id='btnSave' style='{save_btn_style}'><i class='fa fa-cloud-upload-alt'></i> Save</button>"
-        f"    <button type='button' class='btn danger' id='btnCloseShot' style='{close_btn_style}'><i class='fa fa-times'></i> Close</button>"
+        f"    <button type='button' class='btn' id='btnSave_{module_ctx}' style='{save_btn_style}'><i class='fa fa-cloud-upload-alt'></i> Save</button>"
+        f"    <button type='button' class='btn danger' id='btnCloseShot_{module_ctx}' style='{close_btn_style}'><i class='fa fa-times'></i> Close</button>"
         "  </div>"
         "</div>"
     )
 
     js = f"""
-<script>
+ <script>
 (function(){{
-  let stream=null, track=null, lastBlob=null, lastUrl=null;
-  let isUploading=false;
-
-  const v=document.getElementById('capPreview');
-  const btnCapture=document.getElementById('btnCapture');
-  const shotContainer=document.getElementById('shotContainer');
-  const shotBox=document.getElementById('shotBox');
-  const btnSave=document.getElementById('btnSave');
-  const btnCloseShot=document.getElementById('btnCloseShot');
-
+  let stream=null, track=null, lastBlob=null, lastUrl=null, isUploading=false;
   const moduleName = {module_ctx!r};
   const uploadUrl  = {upload_url!r};
 
-  const AUTO_UPLOAD = (moduleName === "PPM" || moduleName === "NTT" || moduleName === "EMAIL");
+  const v=document.getElementById(`capPreview_${{moduleName}}`);
+  const btnCapture=document.getElementById(`btnCapture_${{moduleName}}`);
+  const shotContainer=document.getElementById(`shotContainer_${{moduleName}}`);
+  const shotBox=document.getElementById(`shotBox_${{moduleName}}`);
+  const btnSave=document.getElementById(`btnSave_${{moduleName}}`);
+  const btnCloseShot=document.getElementById(`btnCloseShot_${{moduleName}}`);
+
+  const AUTO_UPLOAD = (moduleName === "PPM" || moduleName === "NTT" || moduleName === "EMAIL" || moduleName === "NTT_REPORT");
 
   function stopStream(){{
     try {{
@@ -4618,7 +4718,6 @@ def build_capture_ui(module_ctx: str):
       isUploading = false;
     }}
   }}
-
   btnCapture.onclick = captureOnce;
   btnSave.onclick = saveShot;
 
@@ -4632,6 +4731,8 @@ def build_capture_ui(module_ctx: str):
 """
     parts.append(js)
     return "".join(parts)
+
+
 
 
 def normalize_return_to(rt: str, role: str, email: str) -> str:
@@ -6228,6 +6329,7 @@ class Handler(SimpleHTTPRequestHandler):
                     allowed_prefixes.append("/upload/PPM")
                 if screen_access in ("NTT", "BOTH"):
                     allowed_prefixes.append("/upload/NTT")
+                    allowed_prefixes.append("/upload/NTT_REPORT")
 
                 if screen_access == "EMAIL":
                     allowed_prefixes.append("/upload/EMAIL")
@@ -6250,6 +6352,11 @@ class Handler(SimpleHTTPRequestHandler):
                 if role != "Admin":
                     return self._msg("Access denied: only Admin can create users.", display_name)
 
+                qs = parse_qs(urlparse(self.path).query)
+                err_msg = (qs.get('err', [''])[0] or '').strip()
+                # Fixed: Use display:block and explicit margins to prevent overlap with password field
+                err_html = f"<div style='color:#dc2626; margin: 12px 0 20px 0; display: block; width: 100%; font-size:13px; font-weight:700'><i class='fa fa-exclamation-circle'></i> {html.escape(err_msg)}</div>" if err_msg else ""
+
                 custom_fields_html = build_custom_fields_form_html(list_custom_fields(active_only=True), {}, name_prefix='cf_')
 
                 content = (
@@ -6259,6 +6366,7 @@ class Handler(SimpleHTTPRequestHandler):
                     "<label>Username</label><input type='text' name='username' required>"
                     "<label>Email</label><input type='email' name='email' required>"
                     "<label>Password</label><input type='password' name='password' required>"
+                    f"{err_html}"
                     "<label>Role</label>"
                     "<select name='role' id='roleSel' required>"
                     "<option value=''>Select role</option>"
@@ -6627,6 +6735,7 @@ f"<input type='hidden' name='field_id' value='{fid}'>"
             # Capture pages: /upload/PPM or /upload/NTT or /upload/EMAIL
             if path in ("/upload/PPM", "/upload/NTT", "/upload/EMAIL"):
                 module_ctx = path.rsplit('/', 1)[-1]
+                ntt_report_lock_reason = ""
 
                 # Employee/Manager module permission check
                 if role in ("Employee", "Manager"):
@@ -6637,17 +6746,18 @@ f"<input type='hidden' name='field_id' value='{fid}'>"
                     if module_ctx == "EMAIL" and screen_access != "EMAIL":
                         return self._msg("Access denied: you do not have permission for EMAIL module.", display_name)
 
+                    if module_ctx == "NTT":
+                        today_ist = utc_now().astimezone(IST).date()
+                        if is_last_friday_of_month(today_ist):
+                            current_month = utc_now().astimezone(IST).strftime('%Y-%m')
+                            if not has_monthly_report_uploaded(session_email, current_month):
+                                ntt_report_lock_reason = "NTT report needs to be submitted. Submission is disabled until you upload the Monthly NTT Export Report."
+
                 # Admin filters
                 qs = parse_qs(urlparse(self.path).query)
                 month_filter = (qs.get("month", [""])[0] or "").strip()
                 name_filter = (qs.get("name", [""])[0] or "").strip()
-                upload_error_alert_js = ''
-                err_msg = (qs.get("err", [""])[0] or '').strip()
-                if err_msg:
-                    safe = html.escape(err_msg, quote=True)
-                    safe = safe.replace('\\', '\\\\').replace("'", "\\'")
-                    upload_error_alert_js = f"<script>window.addEventListener('load', function(){{alert('{safe}');}});</script>"
-
+                upload_error_banner_html = ''
                 if not re.match(r"^\d{4}-\d{2}$", month_filter):
                     month_filter = ""
                 name_filter = name_filter[:60]
@@ -6721,7 +6831,7 @@ f"<input type='hidden' name='field_id' value='{fid}'>"
                         )
 
                     # Show button only in timesheet header (confirmation area) to avoid duplication
-                    timesheet_html = build_timesheet_ui(upload_id, path, admin_delete_html=recapture_html)
+                    timesheet_html = build_timesheet_ui(upload_id, path, admin_delete_html=recapture_html, lock_reason=ntt_report_lock_reason)
 
                     # Main item header only shows Submitted badge to prevent overlap
                     right_header = f"<div class='upload-actions'>{submitted_badge}</div>"
@@ -6783,7 +6893,7 @@ f"<input type='hidden' name='field_id' value='{fid}'>"
                         f"<a class='thumb-link' href='{html.escape(file_url, quote=True)}' "
                         f"data-url='{html.escape(file_url, quote=True)}' "
                         f"data-filename='{html.escape(original_fn, quote=True)}'>"
-                        f"<img src='{html.escape(file_url, quote=True)}' alt='screenshot'></a>"
+                        f"{('<div style=\"width:150px;height:100px;display:flex;align-items:center;justify-content:center;background:#fee2e2;border-radius:8px;\"><i class=\"fa-solid fa-file-pdf\" style=\"font-size:40px;color:#ef4444\"></i></div>' if file_url.lower().split('?')[0].endswith('.pdf') else f'<img src=\"{html.escape(file_url, quote=True)}\" alt=\"screenshot\">')}</a>"
                         "<div class='upload-meta'>"
                         "<div class='upload-head'>"
                         f"<div><strong>{html.escape(original_fn)}</strong> {badge}</div>"
@@ -6801,12 +6911,98 @@ f"<input type='hidden' name='field_id' value='{fid}'>"
                 modal_ui = build_saved_preview_modal()
                 ts_js = build_timesheet_js()
 
+                ntt_report_section = ""
+                if module_ctx == "NTT":
+                    current_month = utc_now().astimezone(IST).strftime('%Y-%m')
+                    monthly_total = get_monthly_total_hours(session_email, current_month)
+
+                    if role == "Employee":
+                        r_rows = list_uploads_db("NTT_REPORT", uploaded_by=session_email)
+                    else:
+                        r_rows = list_uploads_db("NTT_REPORT", uploaded_by=None)
+
+                    r_html = ""
+                    for r_id, r_stored, r_orig, r_at, r_mod, r_email, r_uname in r_rows:
+                        r_url = f"/{UPLOAD_DIR}/{r_stored}"
+                        r_is_pdf = r_orig.lower().endswith('.pdf') or r_stored.lower().endswith('.pdf')
+                        
+                        # Better visual icon for PDF
+                        pdf_svg = """<svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 18H17V16H7V18Z" fill="#EF4444"/><path d="M17 14H7V12H17V14Z" fill="#EF4444"/><path d="M7 10H11V8H7V10Z" fill="#EF4444"/><path d="M6 2C4.34315 2 3 3.34315 3 5V19C3 20.6569 4.34315 22 6 22H18C19.6569 22 21 20.6569 21 19V9L14 2H6ZM13 4L19 10H13V4ZM5 5C5 4.44772 5.44772 4 6 4H11V12H19V19C19 19.5523 18.5523 20 18 20H6C5.44772 20 5 19.5523 5 19V5Z" fill="#EF4444"/></svg>"""
+                        r_thumb = f"<div style='width:100px; height:70px; display:flex; align-items:center; justify-content:center; background:#fee2e2; border-radius:6px; border:1px solid #fecaca;'>{pdf_svg}</div>" if r_is_pdf else f"<img src='{html.escape(r_url, quote=True)}' style='width:100px; border-radius:6px; border:1px solid #e2e8f0'>"
+
+                        # Get extracted total from timesheets table if available
+                        ts_row = get_timesheet_by_upload(r_id)
+                        extracted_val = float(ts_row.get('mon', 0)) if ts_row else 0.0
+                        
+                        summary_box = ""
+                        if extracted_val > 0:
+                            summary_box = f"""
+                            <div style='margin-top:10px; padding:10px 14px; border-radius:10px; background:#f0f9ff; border:1px solid #bae6fd; display:flex; gap:20px; align-items:center;'>
+                                <div><b style='color:#0369a1'>Total effective hours:</b> <span style='font-size:16px; font-weight:800; color:#0c4a6e'>{extracted_val} hrs</span></div>
+                                <div style='height:20px; width:1px; background:#bae6fd'></div>
+                                <div class='muted'>Verified extraction</div>
+                            </div>
+                            """
+
+                        r_btn_text = "Delete" if role == "Admin" else "Recapture"
+                        r_recapture = (
+                            f"<form method='post' action='/upload/delete' style='display:inline;margin:0' "
+                            f"onsubmit=\"return confirm('{r_btn_text} this report?');\">"
+                            f"<input type='hidden' name='upload_id' value='{r_id}'>"
+                            f"<input type='hidden' name='return_to' value='{html.escape(path, quote=True)}'>"
+                            f"<button class='btn danger small' type='submit'>{r_btn_text}</button>"
+                            f"</form>"
+                        )
+                        r_html += (
+                             "<div class='upload-item' style='background:#f9fafb; padding:10px; border-radius:10px; margin-bottom:10px; border:1px solid #eef2f7'>"
+                             f"<a class='thumb-link' href='{html.escape(r_url, quote=True)}' data-url='{html.escape(r_url, quote=True)}' data-filename='{html.escape(r_orig, quote=True)}'>"
+                             f"{r_thumb}</a>"
+                             "<div class='upload-meta' style='margin-left:14px; flex:1'>"
+                             f"<div style='display:flex; justify-content:space-between; align-items:flex-start'>"
+                             f"<div><strong>{html.escape(r_orig)}</strong> <span class='badge lock-badge'>MONTHLY EXPORT REPORT</span></div>"
+                             f"<div>{r_recapture}</div>"
+                             f"</div>"
+                             f"<div class='muted' style='margin-top:4px'>Captured at: {html.escape(format_dt_ist(r_at))}</div>"
+                             f"{f'<div class=\'muted\'>Uploader: <b>{html.escape(r_uname or r_email)}</b></div>' if role=='Admin' else ''}"
+                             f"{summary_box}"
+                             "</div></div>"
+                        )
+
+                    status_msg = f"<div class='muted' style='margin-bottom:15px; padding:12px; background:#f0f9ff; border-radius:8px; border:1px solid #bae6fd; color:#0369a1;'><i class='fa fa-info-circle' style='margin-right:8px;'></i> <b>Note:</b> All users must upload their NTT monthly report on the last Friday of every month.</div>"
+
+                    file_upload_ui = f"""
+                    <div style='margin-top:10px; padding-top:10px'>
+                        <p class='muted' style='margin-bottom:12px'>Upload a saved <b>PDF</b> or <b>Image</b> report directly:</p>
+                        <form method='post' action='/upload/NTT_REPORT' enctype='multipart/form-data'>
+                            <div style='display:flex; gap:10px; align-items:center'>
+                                <input type='file' name='file' accept='application/pdf,image/*' style='font-size:0.85rem' required>
+                                <button type='submit' class='btn'><i class='fa fa-upload'></i> Upload File</button>
+                            </div>
+                        </form>
+                    </div>
+                    """
+                    ntt_report_section = f"""
+                    <div class='card' style='margin-bottom:24px; border:2px solid #e2e8f0; background:linear-gradient(to bottom, #ffffff, #fcfdfe);'>
+                        <h2 style='margin:0 0 12px; font-size:1.4rem; color:#1e293b'>NTT Monthly Export Report</h2>
+                        {status_msg}
+                        <div style='background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0'>
+                            {file_upload_ui}
+                        </div>
+
+                        <div style='margin-top:20px'>
+                            <h3 style='font-size:1rem; margin-bottom:12px; color:#475569'>Saved Monthly Reports</h3>
+                            {r_html if r_html else "<p class='muted'>No monthly reports uploaded yet.</p>"}
+                        </div>
+                    </div>
+                    """
+
                 content = (
                     "<div class='card' style='max-width:1000px;margin:0 auto'>"
-                    f"{upload_error_alert_js}{capture_ui}"
+                    f"{upload_error_banner_html}{capture_ui}"
                     f"{filter_ui}"
                     f"<h2 style='margin-top:20px'>{html.escape('Email' if module_ctx=='EMAIL' else module_ctx)} Captures</h2>"
                     f"{uploads_section}"
+                    f"{ntt_report_section}"
                     f"{modal_ui}"
                     f"{ts_js}"
                     "</div>"
@@ -7289,6 +7485,7 @@ f"<input type='hidden' name='field_id' value='{fid}'>"
     # POST
     # -------------------------
     def do_POST(self):
+        import re
         try:
             path = self._normalize_path(self.path)
             session_email = get_email_from_request(self)
@@ -7447,6 +7644,12 @@ f"<input type='hidden' name='field_id' value='{fid}'>"
                 if not all(form.get(k) for k in required):
                     return self._msg("Missing required fields for Create User.", display_name)
 
+                if not is_valid_password_strength(form.get("password")):
+                    self.send_response(303)
+                    self.send_header("Location", "/user-management/create?err=" + quote("Password must contain alphanumeric characters and exactly one special character."))
+                    self.end_headers()
+                    return
+
                 new_uid = create_user_db_return_id(
                     form["username"], form["email"], form["password"],
                     form["role"], form["status"],
@@ -7461,7 +7664,11 @@ f"<input type='hidden' name='field_id' value='{fid}'>"
                         return self._msg("User created, but custom fields error: " + str(ex), display_name)
                     return self._msg("User created successfully.", display_name)
 
-                return self._msg("Username or email already exists.", display_name)
+                # Redirect back with error if user exists
+                self.send_response(303)
+                self.send_header("Location", "/user-management/create?err=" + quote("Username or email already exists."))
+                self.end_headers()
+                return
 
 
             # UPDATE USER
@@ -7552,7 +7759,7 @@ f"<input type='hidden' name='field_id' value='{fid}'>"
                 return
 
             # RECEIVE captured image
-            if path in ("/upload/PPM", "/upload/NTT", "/upload/EMAIL", "/upload/VERIFY"):
+            if path in ("/upload/PPM", "/upload/NTT", "/upload/EMAIL", "/upload/VERIFY", "/upload/NTT_REPORT"):
                 f = form.get("file")
                 if not f or not isinstance(f, dict) or not f.get("filename"):
                     return self._msg("No captured image received.", display_name)
@@ -7565,6 +7772,8 @@ f"<input type='hidden' name='field_id' value='{fid}'>"
                         return self._msg("Access denied: you do not have permission to upload to PPM.", display_name)
                     if module_val == "NTT" and screen_access not in ("NTT", "BOTH"):
                         return self._msg("Access denied: you do not have permission to upload to NTT.", display_name)
+                    if module_val == "NTT_REPORT" and screen_access not in ("NTT", "BOTH"):
+                        return self._msg("Access denied: you do not have permission to upload to NTT Export Report.", display_name)
                     if module_val == "EMAIL" and screen_access != "EMAIL":
                         return self._msg("Access denied: you do not have permission to upload to EMAIL.", display_name)
                     if module_val == "VERIFY" and screen_access not in ("PPM", "BOTH"):
@@ -7579,6 +7788,10 @@ f"<input type='hidden' name='field_id' value='{fid}'>"
                 date_str = now.strftime("%Y%m%d")
                 time_str = now.strftime("%H%M%S")
 
+                real_filename = form.get("file", {}).get("filename", "") if isinstance(form.get("file"), dict) else ""
+                real_ext = os.path.splitext(real_filename)[-1].lower() if real_filename else ".png"
+                if not real_ext: real_ext = ".png"
+
                 if module_val == "VERIFY":
                     parent_id = form.get("parent_upload_id")
                     if isinstance(parent_id, list):
@@ -7586,11 +7799,11 @@ f"<input type='hidden' name='field_id' value='{fid}'>"
                     if parent_id:
                         original_fn = f"PPM_{parent_id}"
                     else:
-                        original_fn = f"{module_val}_{user_safe}_{date_str}_{time_str}.png"
+                        original_fn = f"{module_val}_{user_safe}_{date_str}_{time_str}{real_ext}"
                 else:
-                    original_fn = f"{module_val}_{user_safe}_{date_str}_{time_str}.png"
+                    original_fn = f"{module_val}_{user_safe}_{date_str}_{time_str}{real_ext}"
                 base, ext = os.path.splitext(original_fn)
-                ext = ext or ".png"
+                ext = ext or real_ext
 
                 timestamp = now.strftime("%Y%m%d%H%M%S")
                 safe_base = re.sub(r"[^a-zA-Z0-9._-]+", "_", base)[:80] or "capture"
@@ -7670,8 +7883,124 @@ f"<input type='hidden' name='field_id' value='{fid}'>"
                             logging.info("NTT OCR autofill ok upload_id=%s week_start=%s found_days=%s", upload_id, ws, found_days)
                         else:
                             logging.warning("NTT OCR returned None for upload_id=%s", upload_id)
-                    except Exception:
-                        logging.exception("NTT OCR extraction failed (non-fatal).")
+
+                # NTT REPORT: Extract Total Hours from PDF/Image
+                        def find_total_v8(s, debug_label=""):
+                            # Robust logging
+                            try:
+                                with open("ntt_debug.txt", "a", encoding="utf-8") as df:
+                                    df.write(f"\n--- {debug_label} ---\n{s}\n")
+                            except: pass
+
+                            s_clean = s.replace('|', ' ').replace(':', ' ').replace(',', '.')
+                            lines = s_clean.split('\n')
+                            best_val = 0.0
+                            found_decimal = False
+                            
+                            target_kws = ['total', 'grand', 'entered', 'recorded', 'all', '[om', '[roa', 'tota', 'hrs', 'wbs']
+                            
+                            # Heuristic 1: Line-by-line with weighting
+                            for line in lines:
+                                l_low = line.lower()
+                                if any(kw in l_low for kw in target_kws):
+                                    if l_low.strip() in ('ntt data', 'print date', 'date'): continue
+                                    
+                                    # Find numbers (2-3 digits, optional dot/space, optional 2 digits)
+                                    # Handles "180.00", "180 . 00", "180"
+                                    nums = re.findall(r'(\d{2,3}(?:[\s.]+\d{1,2})?)', line)
+                                    for n_raw in nums:
+                                        try:
+                                            # Clean artifacts: "180 . 00" -> "180.00"
+                                            n_clean = n_raw.replace(' ', '')
+                                            v = float(n_clean)
+                                            
+                                            if 40.0 <= v < 450.0:
+                                                if v in (202.0, 2026.0, 202.4, 202.5, 202.6): continue
+                                                
+                                                # If we have a decimal point in the raw OCR, it's a very strong signal
+                                                if '.' in n_raw:
+                                                    if not found_decimal or v > best_val:
+                                                        best_val = v
+                                                        found_decimal = True
+                                                elif not found_decimal:
+                                                    if v > best_val: best_val = v
+                                        except: pass
+                            
+                            if best_val > 0: return best_val
+
+                            # Heuristic 2: Windowed scan
+                            s_low = s_clean.lower()
+                            for kw in target_kws:
+                                for match in re.finditer(re.escape(kw), s_low):
+                                    seg = s_clean[match.start():match.start()+250]
+                                    nums = re.findall(r'(\d{2,3}(?:[\s.]+\d{1,2})?)', seg)
+                                    for n_raw in nums:
+                                        try:
+                                            v = float(n_raw.replace(' ', ''))
+                                            if 40.0 <= v < 450.0 and v not in (202, 2026):
+                                                return v
+                                        except: pass
+                            return 0.0
+
+                        if ext.lower() == '.pdf':
+                            pdf = pdfium.PdfDocument(save_path)
+                            try:
+                                total_pages = len(pdf)
+                                # Step 1: Lastest page text
+                                for i in range(total_pages - 1, -1, -1):
+                                    txt = pdf[i].get_textpage().get_text_range()
+                                    res = find_total_v8(txt, debug_label=f"PDF Page {i+1} TEXT")
+                                    if res > 0:
+                                        extracted_total = res
+                                        break
+                                
+                                # Step 2: Advanced OCR fallback (Reverse order)
+                                if extracted_total == 0.0:
+                                    logging.info("PDF text failed, trying multi-pass OCR...")
+                                    import pytesseract
+                                    from PIL import Image
+                                    for i in range(total_pages - 1, max(-1, total_pages - 3), -1):
+                                        bitmap = pdf[i].render(scale=4)
+                                        pil_img = bitmap.to_pil().convert('RGB')
+                                        # Pass A: Preprocessed BW
+                                        proc = _preprocess_for_ocr(pil_img)
+                                        ocr_res = pytesseract.image_to_string(proc, config='--psm 6')
+                                        res = find_total_v8(ocr_res, debug_label=f"PDF Page {i+1} OCR (Proc)")
+                                        if res > 0:
+                                            extracted_total = res
+                                            break
+                                        # Pass B: Raw Grayscale
+                                        gray = pil_img.convert('L')
+                                        ocr_res2 = pytesseract.image_to_string(gray, config='--psm 6')
+                                        res2 = find_total_v8(ocr_res2, debug_label=f"PDF Page {i+1} OCR (Raw)")
+                                        if res2 > 0:
+                                            extracted_total = res2
+                                            break
+                            finally:
+                                pdf.close()
+                        else:
+                            from PIL import Image
+                            import pytesseract
+                            img = Image.open(save_path)
+                            proc = _preprocess_for_ocr(img)
+                            t6 = pytesseract.image_to_string(proc, config='--psm 6')
+                            extracted_total = find_total_v8(t6, debug_label="Image Direct OCR")
+
+                        logging.info("NTT_REPORT extraction v8 final result: %s", extracted_total)
+                        
+                        current_month_str = utc_now().astimezone(IST).strftime('%Y-%m')
+                        system_total = get_monthly_total_hours(session_email, current_month_str)
+                        
+                        if extracted_total > 0:
+                            first_day, _ = _month_start_end(current_month_str)
+                            ws_iso = (first_day or datetime.date.today()).isoformat()
+                            upsert_timesheet(upload_id, ws_iso, extracted_total, 0, 0, 0, 0, 0, 0)
+                            upload_err = f"Report Uploaded! Detected {extracted_total} hrs."
+                        else:
+                            upload_err = "Report Uploaded! (System could not detect 'Total' hours from report last page)."
+                    except Exception as e:
+                        logging.exception("NTT_REPORT extraction failed.")
+                        upload_err = "Report Uploaded, but extraction encountered an error."
 
 
                 # VERIFY uploads: return 200 OK (JS fetch handles reload)
@@ -7683,7 +8012,8 @@ f"<input type='hidden' name='field_id' value='{fid}'>"
                     return
 
                 self.send_response(303)
-                loc = f"/upload/{module_val}"
+                # Ensure NTT_REPORT also redirects back to the main NTT page
+                loc = f"/upload/{'NTT' if module_val=='NTT_REPORT' else module_val}"
                 if upload_err:
                     loc = loc + "?err=" + quote(str(upload_err))
                 self.send_header("Location", loc)
