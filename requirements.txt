@@ -1,0 +1,4 @@
+Pillow
+openpyxl
+pytesseract
+python-dotenv

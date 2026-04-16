@@ -1,64 +1,131 @@
 # Timesheet Tracker
 
-## Project Overview & Scope
-The **Timesheet Tracker** is a self-contained, lightweight Python web application built into a single server file. Its primary goal is to provide a central platform for employees to upload screenshots of their time entries directly from external systems, like PPM or NTT. 
-
-By leveraging Optical Character Recognition (OCR), the system intelligently attempts to extract the hours worked across a given week. Employees can then submit their timesheets, and administrators/managers can oversee submissions, configure reminders, and export the logs to reports.
-
-### Key Features
-- **Single-File Server Application**: Runs on the built-in standard Python `http.server`, completely avoiding heavy web framework dependencies.
-- **Image Uploads & OCR Extraction**: Automatically extracts inputted timesheet hours directly from PPM and NTT interface screenshots using `EasyOCR` and `Pillow` image manipulation.
-- **Role-Based Access Control**:
-  - **Admin**: Has full access, can manage users, oversee all timesheet submissions, delete entries (even after submission), configure email reminders, and export data.
-  - **Manager**: Has managerial access over submissions, help viewing, and export tools but lacks admin user management and help editing rights.
-  - **Employee**: Can view, track, and upload timesheets for their own account, and access the Help page content.
-- **Help Center Access**: Integrated Help page where all users can view guidance, while editing capabilities are strictly restricted to Administrators.
-- **Automated Capture Workflow**: Streamlined "One-Click" capture process for PPM, NTT, and EMAIL modules that automatically takes, shows, and saves screen prints without requiring manual save confirmation.
-- **Strict Timesheet Verification Rules**: Requires that if an employee is working on both PPM and NTT, the hours correctly mirror each other before allowing a final locked submission. 
-- **Export Capabilities**: Converts submitted tracking timelines directly to cleanly formatted `.xlsx` Excel spreadsheets utilizing `openpyxl`.
-- **Automated Database Setup**: Automatically builds and queries a local `users.db` SQLite database using standardized schema handling. 
+## Overview
+A self-contained Python web application for employee timesheet management. Employees upload PPM/NTT/EMAIL screen captures, hours are auto-extracted via OCR, and managers/admins oversee submissions, configure email reminders, and export data to Excel.
 
 ---
 
-## Technical Stack & Logic
-- **Backend Core**: Python 3 standard library
-- **Database**: SQLite3 (`users.db`)
-- **Image Processing Engine**: `easyocr` & `Pillow` (`PIL`)
-- **Exporting**: `openpyxl`
+## Project Structure
 
-## How to Run the Application
+```
+Timesheet-Tracker/
+├── tracker.py          # Main application (single-file HTTP server)
+├── .env                # Local configuration — NOT committed to git
+├── .env.example        # Configuration template (commit this)
+├── .gitignore
+├── requirements.txt    # Python dependencies
+├── README.md
+└── uploads/
+    └── branding/       # Place logo/branding assets here
+```
+
+> **Database** (`users.db`) and **upload files** (`uploads/`) are created automatically on first run and are excluded from source control.
+
+---
+
+## Technical Stack
+
+| Layer | Technology |
+|---|---|
+| Backend | Python 3.9+ standard library (`http.server`) |
+| Database | SQLite 3 (`users.db`) |
+| OCR | `pytesseract` + `Pillow` |
+| Export | `openpyxl` |
+| Config | `python-dotenv` (`.env` file) |
+
+---
+
+## Roles & Access
+
+| Role | Capabilities |
+|---|---|
+| **Admin** | Full access: user management, all screen modules, delete, email settings, export |
+| **Manager** | Screen modules, email settings, export. No user management. |
+| **Employee** | Own uploads only, assigned screen modules (PPM / NTT / EMAIL) |
+
+---
+
+## Setup
 
 ### 1. Prerequisites
-Ensure you have **Python 3.7+** installed on your system.
-It is highly recommended that you run this in a Python Virtual Environment.
+- Python 3.9 or later
+- [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) installed (Windows: note install path)
 
-### 2. Install Required Dependencies
-All 3rd-party dependencies revolve around the image OCR and exporting capabilities. Install them using `pip`:
-
+### 2. Create a virtual environment (recommended)
 ```bash
-pip install Pillow easyocr openpyxl numpy
+python -m venv venv
+# Windows
+venv\Scripts\activate
+# macOS / Linux
+source venv/bin/activate
 ```
 
-### 3. Start the Server
-Navigate to the root directory where `test.py` is located, and execute:
-
+### 3. Install dependencies
 ```bash
-python test.py
+pip install -r requirements.txt
 ```
 
-*Note: The script actively checks for the `uploads/` directory and `users.db`. It will transparently create them upon the first run if they are not already present.*
-
-### 4. Access the Web Dashboard
-Open your preferred browser and connect to the local server socket address prompted in your terminal:
-
+### 4. Configure the environment
+```bash
+cp .env.example .env
 ```
-http://127.0.0.1:8000
+Edit `.env` and fill in your values. The key settings are:
+
+| Variable | Description | Default |
+|---|---|---|
+| `DEBUG` | Enable debug mode / tracebacks | `true` |
+| `HOST` | Server bind address | `127.0.0.1` |
+| `PORT` | Server port | `8000` |
+| `UPLOAD_DIR` | Folder for uploaded screenshots | `uploads` |
+| `DB_FILE` | SQLite database file path | `users.db` |
+| `TESSERACT_DIR` | Path to Tesseract install (Windows) | *(blank = use PATH)* |
+| `AUTO_LOCK_NTT_ON_OCR` | Auto-submit NTT after OCR fill | `true` |
+| `DEFAULT_ADMIN_EMAIL` | Seed admin email (first run only) | `admin@example.com` |
+| `DEFAULT_ADMIN_PASSWORD` | Seed admin password (first run only) | `admin` |
+| `SMTP_HOST` | SMTP server for email reminders | *(blank = disabled)* |
+| `SMTP_PORT` | SMTP port | `587` |
+| `SMTP_USER` | SMTP username | |
+| `SMTP_PASS` | SMTP password | |
+| `SMTP_FROM` | Sender address | |
+| `SMTP_SSL` | Use SSL (port 465) | `false` |
+
+### 5. Run the server
+```bash
+python tracker.py
 ```
 
-### 5. Initial Login Setup
-Log in using the default built-in Administrative credentials set in the project script configuration parameters:
+Open **http://127.0.0.1:8000** in your browser.
 
-- **Email**: `[EMAIL_ADDRESS]`
-- **Password**: `Password`
+On the very first run the database is created automatically and seeded with the default admin account set in `.env`.
 
-*Administrators should eventually rotate these credentials or onboard themselves properly to ensure secure deployments.*
+> **Important**: Change `DEFAULT_ADMIN_PASSWORD` in `.env` before deploying to any shared environment.
+
+---
+
+## Key Features
+
+- **OCR autofill** — PPM and NTT screenshots are parsed automatically using Tesseract; hours are populated into the weekly timesheet.
+- **Symmetry rule** — PPM and NTT hours for the same user/week must match before a final submit is allowed.
+- **Auto-lock** — NTT timesheets are submitted and locked immediately after successful OCR extraction (`AUTO_LOCK_NTT_ON_OCR=true`).
+- **Verification gate** — PPM requires a confirmation (VERIFY) screenshot before the Submit button is enabled.
+- **Email reminders** — Scheduled via a background daemon thread; uses IST timezone for scheduling.
+- **Excel export** — Week-bucketed `.xlsx` report with PPM/NTT columns and submission cutoff colour coding.
+- **Custom user fields** — Admins can define extra profile fields (TEXT, NUMBER, DATE, BOOLEAN, DROPDOWN).
+- **Help centre** — DB-backed HTML page; Admins can edit it via a WYSIWYG editor (Quill).
+
+---
+
+## Database Schema (auto-managed)
+
+| Table | Purpose |
+|---|---|
+| `users` | Authentication, role, screen access, feature flags |
+| `uploads` | Screen capture file records |
+| `timesheets` | Weekly hours (Mon–Sun), submit/lock state |
+| `email_reminders` | Scheduled SMTP reminders |
+| `user_custom_fields` | Admin-defined extra profile field definitions |
+| `user_custom_field_values` | Per-user values for custom fields |
+| `help_content` | HTML body of the Help page |
+
+All schema migrations run automatically at startup — the database is always up to date.
+

@@ -1,0 +1,36 @@
+# --- Environment & Secrets ---
+.env
+
+# --- Database ---
+users.db
+tracker_original.py
+# --- Uploads & User Content ---
+uploads/
+!uploads/branding/
+
+# --- Logs ---
+*.log
+server.log
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# --- Virtual Environments ---
+venv/
+.venv/
+env/
+.env/
+
+# --- IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
